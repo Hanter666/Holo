@@ -1,0 +1,11 @@
+{
+	"title"		:	"holo",
+	"type"		:	"tool",
+	"tags"		:	[ "realism","build" ],
+	"ignore"	:
+	[
+		"*.psd",
+		"*.vcproj",
+		"*.svn*"
+	]
+}
