@@ -3,6 +3,7 @@ AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
 function PANEL:Init()
     self:RequestFocus()
+    self:SetMultiSelectMode(true)
     self.SelectorSize = 2
     self.GridMeshVerts = {}
     self.GridMeshMat = Material("editor/wireframe")
@@ -51,6 +52,12 @@ function PANEL:AddProp(prop)
     table.insert(self.Props, prop)
 end
 
+function PANEL:RemoveProp(prop)
+    self:DeselectProp(prop)
+    table.RemoveByValue(self.Props, prop)
+    prop:Remove()
+end
+
 --Callback
 function PANEL:OnSelectedPropChanged(prop)
 end
@@ -64,7 +71,7 @@ end
 function PANEL:DeselectProp(prop)
     prop.IsSelected = false
     prop:SetColor(self.Colors.DEFAULT_COLOR)
-    self:OnSelectedPropChanged(prop) -- callback
+    self:OnSelectedPropChanged(prop)
 end
 
 function PANEL:DrawGrid()
@@ -258,4 +265,4 @@ function PANEL:Think()
     end
 end
 
-return vgui.Register("Workspace", PANEL, "DPanel")
+return vgui.Register("D_Workspace", PANEL, "DPanel")

@@ -16,28 +16,27 @@ function PANEL:Init()
         self:DrawOutlinedRect()
     end
 
-    self.Tree = vgui.Create("DTree", self)
+    self.Tree = vgui.Create("D_Tree", self)
     self.Tree:Dock(RIGHT)
     self.Tree:SetWide(124)
-    self.Tree.ChildNodes = {}
 
-    function self.Tree:Paint(w, h)
-        draw.RoundedBox(0, 0, 0, w, h, Color(27, 30, 43))
-        surface.SetDrawColor(17, 19, 27)
-        self:DrawOutlinedRect()
+    function self.Tree.DoClick(tree, node)
+        if (node.Prop.IsSelected) then
+            self.WorkSpace:DeselectProp(node.Prop)
+        else
+            self.WorkSpace:SelectProp(node.Prop)
+        end
+
+        tree:SetSelectedItem(node)
     end
 
-    self.WorkSpace = vgui.Create("Workspace", self)
+    self.WorkSpace = vgui.Create("D_Workspace", self)
     self.WorkSpace:Dock(FILL)
 
     function self.WorkSpace.OnSelectedPropChanged(workspace, prop)
         for _, treeNode in pairs(self.Tree.ChildNodes) do
-            print(treeNode.Prop == prop, treeNode.Prop, prop)
-
-            if (treeNode.Prop == prop and treeNode.Prop.IsSelected) then
+            if (treeNode.Prop == prop) then
                 self.Tree:SetSelectedItem(treeNode)
-            else
-                self.Tree:SetSelectedItem(nil)
             end
         end
     end
@@ -58,4 +57,4 @@ function PANEL:OnClose()
     end
 end
 
-return vgui.Register("HoloEditor", PANEL, "DFrame")
+return vgui.Register("D_HoloEditor", PANEL, "DFrame")
