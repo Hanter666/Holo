@@ -3,7 +3,7 @@ AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
 function PANEL:Init()
     self:RequestFocus()
-    self:SetMultiSelectMode(false)
+    self:SetMultiSelectMode(true)
     self.SelectorSize = 5
     self.GridMeshVerts = {}
     self.GridMeshMat = Material("editor/wireframe")
@@ -92,18 +92,43 @@ function PANEL:DrawGrid()
 end
 
 function PANEL:DrawResizeLine()
+    if (not self.LastSelectedProp) then return end
+    local propPos = Vector(0, 0, 0)
+
     if (self.MultiSelectMode) then
+        local pos = Vector()
+        local selected = 0
+
+        for _, prop in pairs(self.Props) do
+            if (prop.IsSelected) then
+                propPos = pos + prop:GetPos()
+                selected = selected + 1
+            end
+        end
+
+        propPos:Div(selected)
     else
-        local propRadius = self.LastSelectedProp:GetModelRadius()
-        local propPos = self.LastSelectedProp:GetPos()
-        local distance = propPos:Distance(self.CamPos) * 0.1
-        local beamScale = distance * 0.1
-        render.SetColorMaterialIgnoreZ()
-        render.DrawBeam(propPos, propPos + Vector(0, 0, distance), beamScale, 0, 1, Color(0, 255, 0,50))
-        render.DrawBeam(propPos, propPos + Vector(0, distance, 0), beamScale, 0, 1, Color(0, 0, 255,50))
-        render.DrawBeam(propPos, propPos + Vector(distance, 0, 0), beamScale, 0, 1, Color(255, 0, 0,50))
-        render.DrawSphere(propPos, propRadius, 50, 50, Color(0, 255, 0, 50))
+        propPos = self.LastSelectedProp:GetPos()
     end
+
+    local distance = propPos:Distance(self.CamPos) * 0.1
+    local beamScale = distance * 0.1
+    local xPos = propPos + Vector(distance, 0, 0)
+    local yPos = propPos + Vector(0, distance, 0)
+    local zPos = propPos + Vector(0, 0, distance)
+    local pozScale = Vector(beamScale, beamScale, beamScale)
+    local negScale = Vector(-beamScale, -beamScale, -beamScale)
+    local R = Color(255, 0, 0)
+    local G = Color(0, 255, 0)
+    local B = Color(0, 0, 255)
+    render.SetColorMaterialIgnoreZ()
+    render.DrawBeam(propPos, zPos, beamScale, 0, 1, G)
+    render.DrawBox(zPos, Angle(0, 0, 0), negScale, pozScale, G, true)
+    render.DrawBeam(propPos, yPos, beamScale, 0, 1, B)
+    render.DrawBox(yPos, Angle(0, 0, 0), negScale, pozScale, B, true)
+    render.DrawBeam(propPos, xPos, beamScale, 0, 1, R)
+    render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
+    render.DrawSphere(propPos, beamScale, 50, 50, G)
 end
 
 function PANEL:DrawProps()
