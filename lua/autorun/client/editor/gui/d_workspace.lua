@@ -3,8 +3,8 @@ AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
 function PANEL:Init()
     self:RequestFocus()
-    self:SetMultiSelectMode(true)
-    self.SelectorSize = 2
+    self:SetMultiSelectMode(false)
+    self.SelectorSize = 5
     self.GridMeshVerts = {}
     self.GridMeshMat = Material("editor/wireframe")
     self.GridSize = 12
@@ -32,9 +32,10 @@ function PANEL:Init()
     }
 
     self.Props = {}
+    self.PropsLocalCoords = false
 
     self.Colors = {
-        SELECTION_COLOR = Color(255, 60, 60),
+        SELECTION_COLOR = Color(5, 190, 232),
         DEFAULT_COLOR = Color(255, 255, 255)
     }
 
@@ -65,6 +66,7 @@ end
 function PANEL:SelectProp(prop)
     prop.IsSelected = true
     prop:SetColor(self.Colors.SELECTION_COLOR)
+    self.LastSelectedProp = prop
     self:OnSelectedPropChanged(prop)
 end
 
@@ -89,21 +91,27 @@ function PANEL:DrawGrid()
     mesh.End()
 end
 
+function PANEL:DrawResizeLine()
+    if (self.MultiSelectMode) then
+    else
+        local propRadius = self.LastSelectedProp:GetModelRadius()
+        local propPos = self.LastSelectedProp:GetPos()
+        local distance = propPos:Distance(self.CamPos) * 0.1
+        local beamScale = distance * 0.1
+        render.SetColorMaterialIgnoreZ()
+        render.DrawBeam(propPos, propPos + Vector(0, 0, distance), beamScale, 0, 1, Color(0, 255, 0,50))
+        render.DrawBeam(propPos, propPos + Vector(0, distance, 0), beamScale, 0, 1, Color(0, 0, 255,50))
+        render.DrawBeam(propPos, propPos + Vector(distance, 0, 0), beamScale, 0, 1, Color(255, 0, 0,50))
+        render.DrawSphere(propPos, propRadius, 50, 50, Color(0, 255, 0, 50))
+    end
+end
+
 function PANEL:DrawProps()
-    for k, prop in pairs(self.Props) do
-        local propRadius = prop:GetModelRadius()
+    for _, prop in pairs(self.Props) do
         local color = prop:GetColor()
-        local radius = self.SelectorSize
         render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
         render.SetBlend(color.a / 255)
         prop:DrawModel()
-        render.SetColorMaterialIgnoreZ()
-
-        if (propRadius < radius) then
-            radius = propRadius * 0.5
-        end
-
-        render.DrawSphere(prop:GetPos(), radius, 50, 50, Color(0, 255, 0))
     end
 end
 
@@ -148,15 +156,7 @@ function PANEL:OnMousePressed(keyCode)
             local lookAt = math.acos(scrVec:Dot((propPos - self.CamPos):GetNormalized()))
             local propDistance = propPos:Distance(self.CamPos)
             local radius = prop:GetModelRadius()
-            radius = radius < self.SelectorSize and radius * 0.5 or self.SelectorSize
             local angle = math.asin(radius / propDistance)
-            debugoverlay.Line(self.CamPos, scrVec, 5, Color(255, 0, 0), true)
-            debugoverlay.Text(self.CamPos, "Camera", 5, nil)
-            debugoverlay.BoxAngles(self.CamPos, Vector(-6, -6, -6), Vector(6, 6, 6), self.CamAng, 5, Color(0, 255, 0))
-            debugoverlay.Text(scrVec, "Raycast End", 5, nil)
-            debugoverlay.Box(scrVec, Vector(-1, -1, -1), Vector(1, 1, 1), 5, Color(0, 0, 255))
-            debugoverlay.Text(Vector(), "Holo", 5, nil)
-            debugoverlay.BoxAngles(Vector(), Vector(-radius, -radius, -radius), Vector(radius, radius, radius), Angle(), 5, Color(255, 255, 255))
 
             if (lookAt < angle and propDistance < minDistance) then
                 minDistance = propDistance
@@ -202,10 +202,11 @@ end
 function PANEL:Paint(w, h)
     local x, y = self:LocalToScreen(0, 0)
     cam.Start3D(self.CamPos, self.CamAng, 90, x, y, w, h, 5, 1000)
+    self:DrawProps()
     render.SuppressEngineLighting(true)
     self:DrawGrid()
+    self:DrawResizeLine()
     render.SuppressEngineLighting(false)
-    self:DrawProps()
     cam.End3D()
 end
 

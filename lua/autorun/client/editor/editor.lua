@@ -46,4 +46,34 @@ function Editor:RemoveProp(prop)
     self.Window.Tree:RemoveNodeByProp(prop)
 end
 
+function Editor:SaveProject()
+    local projectProps = {}
+
+    for _, nodeTree in pairs(self.Window.Tree.ChildNodes) do
+        local prop = nodeTree.Prop
+
+        local propData = {
+            Position = prop:GetPos(),
+            Angles = prop:GetAngles(),
+            Scale = prop:GetModelScale(),
+            Color = prop:GetColor(),
+            Material = prop:GetMaterial(),
+            Model = prop:GetModel()
+        }
+
+        --Bodygroups = -- TODO:
+        --Skin =
+        --Clips =
+        --SubMaterials =
+        --Bones = o_O
+        table.insert(projectProps, propData)
+    end
+
+    local project = {
+        Props = projectProps
+    }
+
+    return util.Compress(util.TableToJSON(project, true))
+end
+
 return Editor
