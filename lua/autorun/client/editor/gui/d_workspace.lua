@@ -170,7 +170,8 @@ function PANEL:OnMousePressed(keyCode)
         local scrVec = util.AimVector(self.CamAng, 90, x, y, self:GetWide(), self:GetTall())
         local minDistance = math.huge
         local minDistanceProp = nil
-
+        local ed = HoloEditor
+        PrintTable(ed)
         for _, prop in pairs(self.Props) do
             --local rayResult = CustomRayTrace() -- TODO:custom ray trace v2 hitbox test mb make dis later
             if (not self.MultiSelectMode) then
