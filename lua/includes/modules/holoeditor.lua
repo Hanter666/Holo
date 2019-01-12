@@ -6,7 +6,8 @@ local vgui = vgui
 local util = util
 local math = math
 local Vector = Vector
-local Angle = Angle
+local table = table
+--local Angle = Angle
 local IsValid = IsValid
 --consts
 local scrW = ScrW()
@@ -27,6 +28,9 @@ AccessorFunc(Camera, "Pos", "Pos")
 AccessorFunc(Camera, "Ang", "Ang")
 AccessorFunc(Camera, "Fov", "Fov", FORCE_NUMBER)
 
+------------------------------------------------------------
+--local functions and helpers
+--add value to table liek key
 ------------------------------------------------------------
 --functions
 --init Camera and setup allsetings
@@ -62,12 +66,12 @@ function AddProp(self, propModel, selectProp)
     prop:SetPos(Vector(20 * #SelectedProps, 0, 0)) --FIXME: для отладки выделения убрать нахой
 
     if (selectProp) then
-        table.insert(SelectedProps, prop)
+        SelectedProps[prop] = true
     else
-        table.insert(DeselectedProps, prop)
+        DeselectedProps[prop] = true
     end
 
-    table.insert(Props, prop)
+    Props[prop] = true
     OnPropAdded(prop)
 end
 
@@ -75,14 +79,14 @@ end
 function RemoveProp(self, prop)
     if (not IsValid(prop)) then return end
 
-    if (table.HasValue(SelectedProps, prop)) then
-        table.RemoveByValue(Props, prop)
-    elseif (table.HasValue(DeselectedProps, prop)) then
-        table.RemoveByValue(Props, prop)
+    if (SelectedProps[prop]) then
+        SelectedProps[prop] = nil
+    elseif (DeselectedProps[prop]) then
+        DeselectedProps[prop] = nil
     end
 
-    if (table.HasValue(Props, prop)) then
-        table.RemoveByValue(Props, prop)
+    if (Props[prop]) then
+        Props[prop] = nil
         prop:Remove()
     end
 end
@@ -114,12 +118,40 @@ function GetAllProps()
     return Props
 end
 
+-- select prop
+function SelectProp(self, prop)
+    if (DeselectedProps[prop]) then
+        SelectedProp[prop] = true
+        DeselectedProps[prop] = nil
+        OnPropSelected(prop)
+    end
+end
+
+-- deselect prop
+function DeselectProp(self, prop)
+    if (SelectedProps[prop]) then
+        DeselectedProps[prop] = true
+        SelectedProps[prop] = nil
+        OnPropDeselected(prop)
+    end
+end
+
 ------------------------------------------------------------
 --callbacks
+--call when new prop added
 function OnPropAdded(self, prop)
 end
 
+--call when prop removed
 function OnPropRemoved(self, prop)
+end
+
+--call when
+function OnPropSelected(self, prop)
+end
+
+--call when
+function OnPropDeselected(self, prop)
 end
 
 ------------------------------------------------------------
