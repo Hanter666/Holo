@@ -24,7 +24,7 @@ Colors = {
     SELECTION_COLOR = Color(5, 190, 232),
     DEFAULT_COLOR = Color(255, 255, 255)
 }
-
+Render = {} --TODO: move from d_workspace render functions,helpers and colors
 Props = {}
 SelectedProps = {}
 DeselectedProps = {}
