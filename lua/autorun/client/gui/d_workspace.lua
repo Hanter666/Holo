@@ -8,7 +8,7 @@ AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
 function PANEL:Init()
     self:RequestFocus()
-    self:SetMultiSelectMode(true)
+    self:SetMultiSelectMode(false)
     self.SelectorSize = 5
     self.CamMove = {}
     self.CamMove[KEY_W] = 0
@@ -68,16 +68,6 @@ function PANEL:DrawResizeLine()
     render.DrawSphere(pos, beamScale, 50, 50, G)
 end
 
-function PANEL:DrawProps()
-    for prop, _ in pairs(Props) do
-        --print(prop)
-        local color = prop:GetColor()
-        render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
-        render.SetBlend(color.a / 255)
-        prop:DrawModel()
-    end
-end
-
 function PANEL:OnKeyCodePressed(keyCode)
     if (self.CamMove[keyCode] ~= nil) then
         self.CamIsMoving = true
@@ -109,10 +99,10 @@ function PANEL:OnMousePressed(keyCode)
         local w, h = self:GetSize()
         local x, y
 
-        if (not self.CamIsRotating) then
-            x, y = self:CursorPos()
-        else
+        if (self.CamIsRotating) then
             x, y = w * 0.5, h * 0.5
+        else
+            x, y = self:CursorPos()
         end
 
         for prop, _ in pairs(Props) do
@@ -134,12 +124,14 @@ function PANEL:OnMousePressed(keyCode)
             self.LastSelectedProp = minDistanceProp
 
             if (HoloEditor:IsSelectedProp(minDistanceProp)) then
+                print(false)
                 HoloEditor:DeselectProp(minDistanceProp)
             else
+                print(true)
                 HoloEditor:SelectProp(minDistanceProp)
             end
         else
-            HoloEditor:DeselectAllProp()
+            --HoloEditor:DeselectAllProp()
             -- TODO: select all by double click
         end
     end
@@ -168,7 +160,7 @@ end
 function PANEL:Paint(w, h)
     local x, y = self:LocalToScreen(0, 0)
     cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
-    self:DrawProps()
+    Render:DrawProps()
     render.SuppressEngineLighting(true)
     Render:DrawGrid()
     self:DrawResizeLine()

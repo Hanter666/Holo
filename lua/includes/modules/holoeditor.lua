@@ -14,43 +14,13 @@ local render = render
 local mesh = mesh
 local Material = Material
 local AccessorFunc = AccessorFunc
+local ClientsideModel = ClientsideModel
 ------------------------------------------------------------
 --consts
 local scrW = ScrW()
 local scrH = ScrH()
 local centerW = scrW * 0.5
 local centerH = scrH * 0.5
-
-------------------------------------------------------------
---base table and other
-Colors = {
-    SELECTION_COLOR = Color(5, 190, 232),
-    DEFAULT_COLOR = Color(255, 255, 255),
-    GRID_COLOR = Color(17, 74, 122, 200)
-}
-
-Render = {
-    GridSize,
-    GridMesh,
-    Materials = {
-        GRID_MATERIAL = Material("editor/wireframe")
-    }
-}
-
-local Materials = Render.Materials
-Props = {}
-SelectedProps = {}
-DeselectedProps = {}
-Trace = {}
-Camera = {CamPos, CamAng, CamFOV}
-EditorWindows = nil
-------------------------------------------------------------
---autogen getter setter for table value
-AccessorFunc(Camera, "Pos", "Pos")
-AccessorFunc(Camera, "Ang", "Ang")
-AccessorFunc(Camera, "FOV", "FOV", FORCE_NUMBER)
-AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
-AccessorFunc(Render, "GridMesh", "GridMesh")
 
 ------------------------------------------------------------
 --local functions and helpers
@@ -75,6 +45,19 @@ local function Callback()
     return setmetatable(newTable, callbackmeta)
 end
 
+--create prop table
+local function CreatePropTable()
+    local mt = {}
+
+    function mt:__index(key)
+        if (not rawget(self, key)) then return false end
+
+        return rawget(self, key)
+    end
+
+    return setmetatable({}, mt)
+end
+
 --remove value from table by key
 local function RemoveFrom(tbl, key)
     tbl[key] = nil
@@ -92,6 +75,37 @@ local function AddVertex(pos, u, v, color)
     mesh.Color(color.r, color.g, color.b, color.a)
     mesh.AdvanceVertex()
 end
+
+------------------------------------------------------------
+--base table and other
+Colors = {
+    SELECTION_COLOR = Color(5, 190, 232),
+    DEFAULT_COLOR = Color(255, 255, 255),
+    GRID_COLOR = Color(17, 74, 122, 200)
+}
+
+Render = {
+    GridSize,
+    GridMesh,
+    Materials = {
+        GRID_MATERIAL = Material("editor/wireframe")
+    }
+}
+
+local Materials = Render.Materials
+Props = CreatePropTable()
+SelectedProps = CreatePropTable()
+DeselectedProps = CreatePropTable()
+Trace = {}
+Camera = {CamPos, CamAng, CamFOV}
+EditorWindows = nil
+------------------------------------------------------------
+--autogen getter setter for table value
+AccessorFunc(Camera, "Pos", "Pos")
+AccessorFunc(Camera, "Ang", "Ang")
+AccessorFunc(Camera, "FOV", "FOV", FORCE_NUMBER)
+AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
+AccessorFunc(Render, "GridMesh", "GridMesh")
 
 ------------------------------------------------------------
 --functions
@@ -126,7 +140,7 @@ end
 
 --add prop
 function AddProp(self, propModel, selectProp)
-    selectProp = selectProp or true
+    selectProp = selectProp or false
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
     prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
@@ -145,11 +159,13 @@ end
 
 -- remove prop
 function RemoveProp(self, prop)
-    RemoveFrom(SelectedProps, prop)
-    RemoveFrom(DeselectedProps, prop)
-    RemoveFrom(Props, prop)
-    prop:Remove()
-    OnPropRemoved(prop)
+    if (prop) then
+        RemoveFrom(SelectedProps, prop)
+        RemoveFrom(DeselectedProps, prop)
+        RemoveFrom(Props, prop)
+        prop:Remove()
+        OnPropRemoved(prop)
+    end
 end
 
 --remove all props and clear table
@@ -157,10 +173,6 @@ function RemoveAllProps()
     for prop, _ in pairs(Props) do
         RemoveProp(_, prop)
     end
-
-    table.Empty(Props)
-    table.Empty(SelectedProps)
-    table.Empty(DeselectedProps)
 end
 
 --get all selected props
@@ -190,7 +202,7 @@ end
 
 -- select prop
 function SelectProp(slf, prop)
-    if (IsDeselectedProp(slf, prop)) then
+    if (prop) then
         AddTo(SelectedProps, prop)
         RemoveFrom(DeselectedProps, prop)
         prop:SetColor(Colors.SELECTION_COLOR)
@@ -200,7 +212,7 @@ end
 
 -- deselect prop
 function DeselectProp(slf, prop)
-    if (IsSelectedProp(slf, prop)) then
+    if (prop) then
         AddTo(DeselectedProps, prop)
         RemoveFrom(SelectedProps, prop)
         prop:SetColor(Colors.DEFAULT_COLOR)
@@ -209,22 +221,22 @@ function DeselectProp(slf, prop)
 end
 
 -- select all props
-function SelectAllProp(slf)
-    for prop, select in pairs(DeselectedProps) do
+function SelectAllProp()
+    for prop, _ in pairs(DeselectedProps) do
         AddTo(SelectedProps, prop)
         RemoveFrom(DeselectedProps, prop)
         prop:SetColor(Colors.SELECTION_COLOR)
-        OnPropSelected(prop) -- FIXME: нужен ли калбек, если некоторые пропы и так были выбраны?
+        OnPropSelected(prop)
     end
 end
 
 -- deselect all props
-function DeselectAllProp(slf)
-    for prop, select in pairs(SelectedProps) do
+function DeselectAllProp()
+    for prop, _ in pairs(SelectedProps) do
         AddTo(DeselectedProps, prop)
         RemoveFrom(SelectedProps, prop)
         prop:SetColor(Colors.DEFAULT_COLOR)
-        OnPropDeselected(prop) -- FIXME: нужен ли калбек, если некоторые пропы и так не были выбраны?
+        OnPropDeselected(prop)
     end
 end
 
@@ -309,16 +321,7 @@ end
 
 ------------------------------------------------------------
 --render lib functions draw stuff
---draw mesh grid
-function Render:DrawGrid()
-    local gridMesh = self:GetGridMesh()
-
-    if (gridMesh) then
-        render.SetMaterial(Materials.GRID_MATERIAL)
-        gridMesh:Draw()
-    end
-end
-
+--update grid mesh
 function Render:UpdateGrid(scale)
     local gridMesh = Render:GetGridMesh()
 
@@ -345,4 +348,23 @@ function Render:UpdateGrid(scale)
     end
 
     mesh.End()
+end
+
+--draw mesh grid
+function Render:DrawGrid()
+    local gridMesh = self:GetGridMesh()
+
+    if (gridMesh) then
+        render.SetMaterial(Materials.GRID_MATERIAL)
+        gridMesh:Draw()
+    end
+end
+
+function Render:DrawProps()
+    for prop, _ in pairs(Props) do
+        local color = prop:GetColor()
+        render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
+        render.SetBlend(color.a / 255)
+        prop:DrawModel()
+    end
 end
