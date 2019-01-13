@@ -11,6 +11,9 @@ local table = table
 --local Angle = Angle
 local IsValid = IsValid
 local Color = Color
+local render = render
+local mesh = mesh
+local Material = Material
 ------------------------------------------------------------
 --consts
 local scrW = ScrW()
@@ -24,7 +27,13 @@ Colors = {
     SELECTION_COLOR = Color(5, 190, 232),
     DEFAULT_COLOR = Color(255, 255, 255)
 }
-Render = {} --TODO: move from d_workspace render functions,helpers and colors
+
+Render = {
+    Materials = {
+        GRID_MATERIAL = Material("editor/wireframe")
+    }
+}
+
 Props = {}
 SelectedProps = {}
 DeselectedProps = {}
@@ -106,11 +115,9 @@ function AddProp(self, propModel, selectProp)
     prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
 
     if (selectProp) then
-        AddTo(SelectedProps, prop)
-        prop:SetColor(Colors.SELECTION_COLOR)
-        OnPropSelected(prop)
+        SelectProp(prop)
     else
-        AddTo(DeselectedProps, prop)
+        DeselectProp(prop)
     end
 
     AddTo(Props, prop)
@@ -156,12 +163,12 @@ end
 
 -- prop is selected
 function IsSelectedProp(slf, prop)
-    return SelectedProps[prop] == true
+    return SelectedProps[prop]
 end
 
 -- prop is not selected
 function IsDeselectedProp(slf, prop)
-    return DeselectedProps[prop] == true
+    return DeselectedProps[prop]
 end
 
 -- select prop
@@ -205,7 +212,8 @@ function DeselectAllProp(slf)
 end
 
 -- save editor project and return compressed data
-function SaveProject() -- FIXME: save - неподходящее название
+-- FIXME: save - неподходящее название
+function SaveProject()
     local projectProps = {}
 
     for _, prop in pairs(Props) do
@@ -247,7 +255,6 @@ OnPropDeselected = Callback()
 
 ------------------------------------------------------------
 --trace lib functions for hit testing in 3D space
-
 --get aim direction from screen to world
 function Trace:AimDirection(ang, fov, x, y, w, h)
     ang = ang or Camera:GetAng()
@@ -281,4 +288,21 @@ function Trace:IsCursorHit(cursorX, cursorY, viewportW, viewportH, targetPositio
     local angle = math.asin(targetRadius / targetDistance)
 
     return dot < angle, targetDistance
+end
+
+------------------------------------------------------------
+--render lib functions draw stuff
+--draw mesh grid
+function Render:DrawGrid()
+    render.SetMaterial(self.Materials.GRID_MATERIAL)
+    mesh.Begin(MATERIAL_LINES, #self.GridMeshVerts)
+
+    for i = 1, #self.GridMeshVerts do
+        mesh.Position(self.GridMeshVerts[i].pos)
+        mesh.TexCoord(0, self.GridMeshVerts[i].u, self.GridMeshVerts[i].v)
+        mesh.Color(17, 74, 122, 200)
+        mesh.AdvanceVertex()
+    end
+
+    mesh.End()
 end

@@ -38,7 +38,6 @@ function PANEL:Init()
 end
 
 function PANEL:DrawGrid()
-    if (#self.GridMeshVerts < 0) then return end
     render.SetMaterial(self.GridMeshMat)
     mesh.Begin(MATERIAL_LINES, #self.GridMeshVerts)
 
