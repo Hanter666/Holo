@@ -101,7 +101,7 @@ function Init()
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
     Camera:SetFOV(90)
     Render:SetGridSize(12)
-    Render:UpdateGrid(20)
+    Render:UpdateGrid(19)
 end
 
 --open editor window
@@ -335,8 +335,8 @@ function Render:UpdateGrid(scale)
     gridMesh = Render:GetGridMesh()
     mesh.Begin(gridMesh, MATERIAL_LINES, scale * 2 + 4)
 
-    for i = 1, scale do
-        local pos = (i - 1) * gridSize
+    for i = 0, scale do
+        local pos = i * gridSize
         --x:left y:forward z:up
         AddVertex(Vector(pos, lineLenght, 0) - offset, 0, 0, gridColor)
         AddVertex(Vector(pos, 0, 0) - offset, 1, 1, gridColor)
