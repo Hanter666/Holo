@@ -1,4 +1,5 @@
 local Props = HoloEditor.Props
+local SelectedProps = HoloEditor.SelectedProps
 local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
@@ -7,7 +8,6 @@ local PANEL = {}
 
 function PANEL:Init()
     self:RequestFocus()
-    self.SelectorSize = 5
     self.CamMove = {}
     self.CamMove[KEY_W] = 0
     self.CamMove[KEY_S] = 0
@@ -22,13 +22,12 @@ function PANEL:Init()
     self.CamShiftSpeed = 2
     self.CamInterpolation = 0.1
     self.CamIsRotating = false
+    self.LastClickTime = SysTime()
 
     self.OldCursorPos = {
         x = 0,
         y = 0
     }
-
-    self.PropsLocalCoords = false
 end
 
 function PANEL:OnKeyCodePressed(keyCode)
@@ -57,6 +56,13 @@ function PANEL:OnMousePressed(keyCode)
         self:SetCursor("blank")
         RememberCursorPosition()
     elseif (keyCode == MOUSE_LEFT) then
+        if (self.LastClickTime and SysTime() - self.LastClickTime < 0.2) then
+            self:DoDoubleClick()
+
+            return
+        end
+
+        self.LastClickTime = SysTime()
         local minDistance = math.huge
         local minDistanceProp = nil
         local w, h = self:GetSize()
@@ -89,10 +95,15 @@ function PANEL:OnMousePressed(keyCode)
             else
                 HoloEditor:SelectProp(minDistanceProp)
             end
-        else
-            --HoloEditor:DeselectAllProp()
-            -- TODO: select all by double click
         end
+    end
+end
+
+function PANEL:DoDoubleClick()
+    if (table.Count(SelectedProps) == 0) then
+        HoloEditor:SelectAllProps()
+    else
+        HoloEditor:DeselectAllProps()
     end
 end
 

@@ -125,7 +125,7 @@ AccessorFunc(SelectMode, "Mode", "Mode", FORCE_NUMBER)
 
 ------------------------------------------------------------
 --functions
---init Camera and setup allsetings
+--init camera and setup all setings
 function Init()
     SelectMode:SetMutiselectMode(true)
     SelectMode:SetMode(Modes.Select)
@@ -158,15 +158,15 @@ end
 
 --add prop
 function AddProp(self, propModel, selectProp)
-    selectProp = selectProp or false
+    selectProp = selectProp or SelectMode:GetMutiselectMode()
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
     prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
 
     if (selectProp) then
-        SelectProp(prop)
+        self:SelectProp(prop)
     else
-        DeselectProp(prop)
+        self:DeselectProp(prop)
     end
 
     AddTo(Props, prop)
@@ -239,7 +239,7 @@ function DeselectProp(slf, prop)
 end
 
 -- select all props
-function SelectAllProp()
+function SelectAllProps()
     for prop, _ in pairs(DeselectedProps) do
         AddTo(SelectedProps, prop)
         RemoveFrom(DeselectedProps, prop)
@@ -249,7 +249,7 @@ function SelectAllProp()
 end
 
 -- deselect all props
-function DeselectAllProp()
+function DeselectAllProps()
     for prop, _ in pairs(SelectedProps) do
         AddTo(DeselectedProps, prop)
         RemoveFrom(SelectedProps, prop)
