@@ -19,27 +19,8 @@ function PANEL:Init()
     self.Tree = vgui.Create("D_Tree", self)
     self.Tree:Dock(RIGHT)
     self.Tree:SetWide(124)
-
-    function self.Tree.DoClick(tree, node)
-        if (node.Prop.IsSelected) then
-            self.WorkSpace:DeselectProp(node.Prop)
-        else
-            self.WorkSpace:SelectProp(node.Prop)
-        end
-
-        tree:SetSelectedItem(node)
-    end
-
     self.WorkSpace = vgui.Create("D_Workspace", self)
     self.WorkSpace:Dock(FILL)
-
-    function self.WorkSpace.OnSelectedPropChanged(workspace, prop)
-        for _, treeNode in pairs(self.Tree.ChildNodes) do
-            if (treeNode.Prop == prop) then
-                self.Tree:SetSelectedItem(treeNode)
-            end
-        end
-    end
 end
 
 function PANEL:Paint(w, h)
@@ -50,11 +31,7 @@ function PANEL:Paint(w, h)
 end
 
 function PANEL:OnClose()
-    for _, prop in pairs(self.WorkSpace.Props) do
-        if (IsValid(prop)) then
-            prop:Remove()
-        end
-    end
+    HoloEditor:RemoveAllProps()
 end
 
 return vgui.Register("D_HoloEditor", PANEL, "DFrame")

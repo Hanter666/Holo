@@ -1,3 +1,4 @@
+AddCSLuaFile()
 --create module
 module("HoloEditor", package.seeall)
 ------------------------------------------------------------
@@ -9,38 +10,75 @@ local Vector = Vector
 local table = table
 --local Angle = Angle
 local IsValid = IsValid
+local Color = Color
+------------------------------------------------------------
 --consts
 local scrW = ScrW()
 local scrH = ScrH()
 local centerW = scrW * 0.5
 local centerH = scrH * 0.5
+
 ------------------------------------------------------------
 --utils and other
+Colors = {
+    SELECTION_COLOR = Color(5, 190, 232),
+    DEFAULT_COLOR = Color(255, 255, 255)
+}
+
 Props = {}
 SelectedProps = {}
 DeselectedProps = {}
 Trace = {}
-Camera = {CamPos, CamAng, CamFov}
+Camera = {CamPos, CamAng, CamFOV}
 EditorWindows = nil
 ------------------------------------------------------------
 --autogen getter setter for table value
 AccessorFunc(Camera, "Pos", "Pos")
 AccessorFunc(Camera, "Ang", "Ang")
-AccessorFunc(Camera, "Fov", "Fov", FORCE_NUMBER)
+AccessorFunc(Camera, "FOV", "FOV", FORCE_NUMBER)
 
 ------------------------------------------------------------
 --local functions and helpers
---add value to table liek key
+--create new callback
+local function Callback()
+    local callbackmeta = {}
+
+    function callbackmeta:__call(prop)
+        for _, fun in pairs(self.Callbacks) do
+            fun(prop)
+        end
+    end
+
+    local newTable = {
+        Callbacks = {}
+    }
+
+    function newTable:AddCallback(a)
+        self.Callbacks[#self.Callbacks + 1] = a
+    end
+
+    return setmetatable(newTable, callbackmeta)
+end
+
+--remove value from table by key
+local function RemoveFrom(tbl, key)
+    tbl[key] = nil
+end
+
+local function AddTo(tbl, key)
+    tbl[key] = true
+end
+
 ------------------------------------------------------------
 --functions
 --init Camera and setup allsetings
 function Init()
     Camera:SetPos(Vector(0, -200, 100))
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
-    Camera:SetFov(90)
+    Camera:SetFOV(90)
 end
 
---Open editor window
+--open editor window
 function Open()
     if (IsValid(EditorWindows)) then
         EditorWindows:Close()
@@ -52,54 +90,49 @@ function Open()
     return EditorWindows
 end
 
+--close editor window
 function Close()
     if (IsValid(EditorWindows)) then
         EditorWindows:Close()
     end
 end
 
---Add prop
+--add prop
 function AddProp(self, propModel, selectProp)
-    selectProp = selectProp == nil and true or selectProp
+    selectProp = selectProp == nil and true or false
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
-    prop:SetPos(Vector(20 * #SelectedProps, 0, 0)) --FIXME: для отладки выделения убрать нахой
+    prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --FIXME: для отладки выделения убрать нахой
 
     if (selectProp) then
-        SelectedProps[prop] = true
+        AddTo(SelectedProps, prop)
     else
-        DeselectedProps[prop] = true
+        AddTo(DeselectedProps, prop)
     end
 
-    Props[prop] = true
+    AddTo(Props, prop)
     OnPropAdded(prop)
+
+    return prop
 end
 
 -- remove prop
 function RemoveProp(self, prop)
-    if (not IsValid(prop)) then return end
-
-    if (SelectedProps[prop]) then
-        SelectedProps[prop] = nil
-    elseif (DeselectedProps[prop]) then
-        DeselectedProps[prop] = nil
-    end
-
-    if (Props[prop]) then
-        Props[prop] = nil
-        prop:Remove()
-    end
+    RemoveFrom(SelectedProps, prop)
+    RemoveFrom(DeselectedProps, prop)
+    RemoveFrom(Props, prop)
+    prop:Remove()
+    OnPropRemoved(prop)
 end
 
 --remove all props and clear table
 function RemoveAllProps()
-    for _, prop in pairs(Props) do
-        OnPropRemoved(prop)
-        prop.Remove()
+    for prop, _ in pairs(Props) do
+        RemoveProp(_, prop)
     end
 
     table.Empty(Props)
-    table.Empty(SelectProp)
+    table.Empty(SelectedProps)
     table.Empty(DeselectedProps)
 end
 
@@ -118,41 +151,94 @@ function GetAllProps()
     return Props
 end
 
+-- prop is selected
+function IsSelectedProp(slf, prop)
+    return SelectedProps[prop] == nil or false
+end
+
+-- prop is selected
+function IsDeselectedProp(slf, prop)
+    return DeselectedProps[prop] == nil or false
+end
+
 -- select prop
-function SelectProp(self, prop)
+function SelectProp(slf, prop)
     if (DeselectedProps[prop]) then
-        SelectedProp[prop] = true
-        DeselectedProps[prop] = nil
+        AddTo(SelectedProp, prop)
+        RemoveFrom(DeselectedProps, prop)
+        prop:SetColor(Colors.SELECTION_COLOR)
         OnPropSelected(prop)
     end
 end
 
 -- deselect prop
-function DeselectProp(self, prop)
+function DeselectProp(slf, prop)
     if (SelectedProps[prop]) then
-        DeselectedProps[prop] = true
-        SelectedProps[prop] = nil
+        AddTo(DeselectedProps, prop)
+        RemoveFrom(SelectedProps, prop)
+        prop:SetColor(Colors.DEFAULT_COLOR)
         OnPropDeselected(prop)
     end
+end
+
+-- select all props
+function SelectAllProp(slf)
+    for prop, select in pairs(DeselectedProps) do
+        AddTo(SelectedProps, prop)
+        RemoveFrom(DeselectedProps, prop)
+        OnPropSelected(prop)
+    end
+end
+
+-- deselect all props
+function DeselectAllProp(slf)
+    for prop, select in pairs(SelectedProps) do
+        AddTo(DeselectedProps, prop)
+        RemoveFrom(SelectedProps, prop)
+        OnPropDeselected(prop)
+    end
+end
+
+-- save editor project and return compressed data
+function SaveProject()
+    local projectProps = {}
+
+    for _, prop in pairs(Props) do
+        local propData = {
+            Position = prop:GetPos(),
+            Angles = prop:GetAngles(),
+            Scale = prop:GetModelScale(),
+            Color = prop:GetColor(),
+            Material = prop:GetMaterial(),
+            Model = prop:GetModel()
+        }
+
+        -- TODO:
+        --Bodygroups =
+        --Skin =
+        --Clips =
+        --SubMaterials =
+        --Bones = o_O
+        table.insert(projectProps, propData)
+    end
+
+    local project = {
+        Props = projectProps
+    }
+
+    return util.Compress(util.TableToJSON(project, true))
 end
 
 ------------------------------------------------------------
 --callbacks
 --call when new prop added
-function OnPropAdded(self, prop)
-end
-
+OnPropAdded = Callback()
 --call when prop removed
-function OnPropRemoved(self, prop)
-end
-
---call when
-function OnPropSelected(self, prop)
-end
-
---call when
-function OnPropDeselected(self, prop)
-end
+OnPropRemoved = Callback()
+--call when prop selected
+OnPropSelected = Callback()
+--call when prop deselected
+OnPropDeselected = Callback()
 
 ------------------------------------------------------------
 --trace lib function
@@ -160,7 +246,7 @@ end
 function Trace:AimVector(ang, fov, x, y, w, h)
     ang = ang == nil and Camera:GetAng() or ang
     endPos = endPos == nil and Camera:GetPos() or endPos
-    fov = fov == nil and Camera:GetFov() or fov
+    fov = fov == nil and Camera:GetFOV() or fov
     x = x == nil and centerW or x
     y = y == nil and centerH or y
     w = w == nil and scrW or w
@@ -170,13 +256,12 @@ function Trace:AimVector(ang, fov, x, y, w, h)
 end
 
 --get trace hit result if cursor hit some in 3d space
-function Trace:IsCursorHit(x, y, w, h, endPosition, hitBoxScale)
+function Trace:IsLineHit(startPosition, endPosition, hitBoxScale)
     local camPos = Camera:GetPos()
-    local trace = self:AimVector(_, _, x, y, w, h)
-    local dotNormal = trace:Dot((endPosition - camPos):GetNormalized())
+    local dotNormal = startPosition:Dot((endPosition - camPos):GetNormalized())
     local dot = math.acos(dotNormal)
     local propDistance = endPosition:Distance(camPos)
-    local angle = math.asin(hitboxScale / propDistance)
+    local angle = math.asin(hitBoxScale / propDistance)
 
-    return dot < angle
+    return dot < angle, propDistance
 end

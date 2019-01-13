@@ -1,3 +1,7 @@
+local Props = HoloEditor.Props
+local SelectedProps = HoloEditor.SelectedProps
+local Camera = HoloEditor.Camera
+local Trace = HoloEditor.Trace
 local PANEL = {}
 AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
@@ -8,8 +12,6 @@ function PANEL:Init()
     self.GridMeshVerts = {}
     self.GridMeshMat = Material("editor/wireframe")
     self.GridSize = 12
-    self.CamPos = Vector(0, -200, 100)
-    self.CamAng = (Vector(0, 0, 0) - self.CamPos):Angle()
     self.CamMove = {}
     self.CamMove[KEY_W] = 0
     self.CamMove[KEY_S] = 0
@@ -31,49 +33,8 @@ function PANEL:Init()
         y = 0
     }
 
-    self.Props = {}
     self.PropsLocalCoords = false
-
-    self.Colors = {
-        SELECTION_COLOR = Color(5, 190, 232),
-        DEFAULT_COLOR = Color(255, 255, 255)
-    }
-
     self:UpdateGrid(20)
-end
-
-function PANEL:AddProp(prop)
-    if (not self.MultiSelectMode) then
-        for _, pr in pairs(self.Props) do
-            self:DeselectProp(pr)
-        end
-    end
-
-    self:SelectProp(prop)
-    table.insert(self.Props, prop)
-end
-
-function PANEL:RemoveProp(prop)
-    self:DeselectProp(prop)
-    table.RemoveByValue(self.Props, prop)
-    prop:Remove()
-end
-
---Callback
-function PANEL:OnSelectedPropChanged(prop)
-end
-
-function PANEL:SelectProp(prop)
-    prop.IsSelected = true
-    prop:SetColor(self.Colors.SELECTION_COLOR)
-    self.LastSelectedProp = prop
-    self:OnSelectedPropChanged(prop)
-end
-
-function PANEL:DeselectProp(prop)
-    prop.IsSelected = false
-    prop:SetColor(self.Colors.DEFAULT_COLOR)
-    self:OnSelectedPropChanged(prop)
 end
 
 function PANEL:DrawGrid()
@@ -97,21 +58,17 @@ function PANEL:DrawResizeLine()
 
     if (self.MultiSelectMode) then
         local pos = Vector()
-        local selected = 0
 
-        for _, prop in pairs(self.Props) do
-            if (prop.IsSelected) then
-                propPos = pos + prop:GetPos()
-                selected = selected + 1
-            end
+        for prop, _ in pairs(SelectedProps) do
+            propPos = pos + prop:GetPos()
         end
 
-        propPos:Div(selected)
+        propPos:Div(table.Count(SelectedProps))
     else
         propPos = self.LastSelectedProp:GetPos()
     end
 
-    local distance = propPos:Distance(self.CamPos) * 0.1
+    local distance = propPos:Distance(Camera:GetPos()) * 0.1
     local beamScale = distance * 0.1
     local xPos = propPos + Vector(distance, 0, 0)
     local yPos = propPos + Vector(0, distance, 0)
@@ -132,7 +89,8 @@ function PANEL:DrawResizeLine()
 end
 
 function PANEL:DrawProps()
-    for _, prop in pairs(self.Props) do
+    for prop, _ in pairs(Props) do
+        --print(prop)
         local color = prop:GetColor()
         render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
         render.SetBlend(color.a / 255)
@@ -167,25 +125,22 @@ function PANEL:OnMousePressed(keyCode)
         RememberCursorPosition()
     elseif (keyCode == MOUSE_LEFT) then
         local x, y = self:CursorPos()
-        local scrVec = util.AimVector(self.CamAng, 90, x, y, self:GetWide(), self:GetTall())
+        local w, h = self:GetSize()
+        local scrVec = Trace:AimVector(_, _, x, y, w, h)
         local minDistance = math.huge
         local minDistanceProp = nil
-        local ed = HoloEditor
-        PrintTable(ed)
-        for _, prop in pairs(self.Props) do
-            --local rayResult = CustomRayTrace() -- TODO:custom ray trace v2 hitbox test mb make dis later
+
+        for prop, _ in pairs(Props) do
             if (not self.MultiSelectMode) then
-                self:DeselectProp(prop)
+                HoloEditor:DeselectProp(prop)
             end
 
             local propPos = prop:GetPos()
-            local lookAt = math.acos(scrVec:Dot((propPos - self.CamPos):GetNormalized()))
-            local propDistance = propPos:Distance(self.CamPos)
-            local radius = prop:GetModelRadius()
-            local angle = math.asin(radius / propDistance)
+            local propRadius = prop:GetModelRadius()
+            local isHit, distanseToCamera = Trace:IsLineHit(scrVec, propPos, propRadius)
 
-            if (lookAt < angle and propDistance < minDistance) then
-                minDistance = propDistance
+            if (isHit and distanseToCamera < minDistance) then
+                minDistance = distanseToCamera
                 minDistanceProp = prop
             end
         end
@@ -193,16 +148,13 @@ function PANEL:OnMousePressed(keyCode)
         if (minDistanceProp) then
             self.LastSelectedProp = minDistanceProp
 
-            if (minDistanceProp.IsSelected) then
-                self:DeselectProp(minDistanceProp)
+            if (HoloEditor:IsSelectedProp(prop)) then
+                HoloEditor:DeselectProp(minDistanceProp)
             else
-                self:SelectProp(minDistanceProp)
+                HoloEditor:SelectProp(minDistanceProp)
             end
         end
     end
-end
-
-local function CustomRayTrace()
 end
 
 function PANEL:OnMouseReleased(keyCode)
@@ -216,18 +168,18 @@ end
 function PANEL:OnCursorMoved(cursorX, cursorY)
     if (self.CamIsRotating) then
         local ang = Angle(-(self.OldCursorPos.y - cursorY), self.OldCursorPos.x - cursorX, 0)
-        local lerpAng = LerpAngle(self.CamInterpolation, self.CamAng, self.CamAng + ang)
+        local lerpAng = LerpAngle(self.CamInterpolation, Camera:GetAng(), Camera:GetAng() + ang)
         local pitch = math.Clamp(lerpAng.pitch, -89, 89)
         lerpAng.pitch = pitch
         lerpAng.Roll = 0
-        self.CamAng = lerpAng
+        Camera:SetAng(lerpAng)
         RestoreCursorPosition()
     end
 end
 
 function PANEL:Paint(w, h)
     local x, y = self:LocalToScreen(0, 0)
-    cam.Start3D(self.CamPos, self.CamAng, 90, x, y, w, h, 5, 1000)
+    cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
     self:DrawProps()
     render.SuppressEngineLighting(true)
     self:DrawGrid()
@@ -278,7 +230,7 @@ function PANEL:Think()
         local right = self.CamMove[KEY_D] - self.CamMove[KEY_A]
         local up = self.CamMove[KEY_SPACE] - self.CamMove[KEY_LCONTROL]
         local speed = self.CamSpeed
-        local direction = ((self.CamAng:Forward() * forward) + (self.CamAng:Right() * right) + Vector(0, 0, up)):GetNormalized()
+        local direction = ((Camera:GetAng():Forward() * forward) + (Camera:GetAng():Right() * right) + Vector(0, 0, up)):GetNormalized()
 
         if (self.CamMove[KEY_LSHIFT] ~= 0) then
             speed = speed * self.CamShiftSpeed
@@ -288,7 +240,7 @@ function PANEL:Think()
             speed = speed * 0.5
         end
 
-        self.CamPos = self.CamPos + direction * speed
+        Camera:SetPos(Camera:GetPos() + direction * speed)
     end
 end
 

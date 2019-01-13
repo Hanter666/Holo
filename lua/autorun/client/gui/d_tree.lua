@@ -1,7 +1,6 @@
 local PANEL = {}
 
 function PANEL:Init()
-    self.ChildNodes = {}
 end
 
 function PANEL:Paint(w, h)
@@ -20,13 +19,12 @@ function PANEL:RemoveNodeByProp(prop)
     end
 end
 
-function PANEL:SetSelectedItem(node)
+--[[function PANEL:SetSelectedItem(node)
     self.m_pSelectedItem = node
 
     if (node) then
-        local selected = node.Prop.IsSelected
+        local selected = HoloEditor:IsSelectedProp()
         node:SetSelected(selected)
     end
-end
-
+end]]
 return vgui.Register("D_Tree", PANEL, "DTree")
