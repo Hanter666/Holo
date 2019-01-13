@@ -69,7 +69,7 @@ function PANEL:OnMousePressed(keyCode)
         end
 
         for prop, _ in pairs(Props) do
-            if (SelectMode:GetMutiselectMode()) then
+            if (not SelectMode:GetMutiselectMode()) then
                 HoloEditor:DeselectProp(prop)
             end
 
@@ -84,8 +84,6 @@ function PANEL:OnMousePressed(keyCode)
         end
 
         if (minDistanceProp) then
-            HoloEditor:SetLastSelectedProp(minDistanceProp)
-
             if (HoloEditor:IsSelectedProp(minDistanceProp)) then
                 HoloEditor:DeselectProp(minDistanceProp)
             else

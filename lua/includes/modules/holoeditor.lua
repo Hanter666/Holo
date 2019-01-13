@@ -100,10 +100,9 @@ DeselectedProps = CreatePropTable()
 Trace = {}
 Camera = {CamPos, CamAng, CamFOV}
 EditorWindows = nil
-LastSelectedProp = nil
 
 SelectMode = {
-    MutiselectMode = false,
+    MutiselectMode,
     Mode,
     Modes = {
         Select = 0,
@@ -114,7 +113,6 @@ SelectMode = {
 }
 
 local Modes = SelectMode.Modes
-local Mode = SelectMode.Mode
 ------------------------------------------------------------
 --autogen getter setter for table value
 AccessorFunc(Camera, "Pos", "Pos")
@@ -122,14 +120,14 @@ AccessorFunc(Camera, "Ang", "Ang")
 AccessorFunc(Camera, "FOV", "FOV", FORCE_NUMBER)
 AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
 AccessorFunc(Render, "GridMesh", "GridMesh")
-AccessorFunc(SelectMode, "MutiselectMode", "MutiselectMode")
-AccessorFunc(HoloEditor, "LastSelectedProp", "LastSelectedProp")
-AccessorFunc(Mode, "Mode", "Mode")
+AccessorFunc(SelectMode, "MutiselectMode", "MutiselectMode", FORCE_BOOL)
+AccessorFunc(SelectMode, "Mode", "Mode", FORCE_NUMBER)
 
 ------------------------------------------------------------
 --functions
 --init Camera and setup allsetings
 function Init()
+    SelectMode:SetMutiselectMode(true)
     SelectMode:SetMode(Modes.Select)
     Camera:SetPos(Vector(0, -200, 100))
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
@@ -391,9 +389,9 @@ function Render:DrawProps()
 end
 
 --draw resize contorll
-function DrawResizeLine()
+function Render:DrawResizeLine()
     local propCont = table.Count(SelectedProps)
-    if (propCont) then return end
+    if (propCont == 0) then return end
     local pos = Vector()
 
     if (SelectMode:GetMutiselectMode()) then
@@ -403,7 +401,7 @@ function DrawResizeLine()
 
         pos:Div(propCont)
     else
-        pos = LastSelectedProp:GetPos()
+        pos = table.GetKeys(SelectedProps)[1]:GetPos()
     end
 
     local distance = pos:Distance(Camera:GetPos()) * 0.1
