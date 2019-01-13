@@ -65,6 +65,7 @@ local function RemoveFrom(tbl, key)
     tbl[key] = nil
 end
 
+--add value to table
 local function AddTo(tbl, key)
     tbl[key] = true
 end
