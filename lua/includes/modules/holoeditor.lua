@@ -1,3 +1,4 @@
+--send module to client
 AddCSLuaFile()
 --create module
 module("HoloEditor", package.seeall)
@@ -99,6 +100,21 @@ DeselectedProps = CreatePropTable()
 Trace = {}
 Camera = {CamPos, CamAng, CamFOV}
 EditorWindows = nil
+LastSelectedProp = nil
+
+SelectMode = {
+    MutiselectMode = false,
+    Mode,
+    Modes = {
+        Select = 0,
+        Move = 1,
+        Rotate = 2,
+        Resize = 3
+    }
+}
+
+local Modes = SelectMode.Modes
+local Mode = SelectMode.Mode
 ------------------------------------------------------------
 --autogen getter setter for table value
 AccessorFunc(Camera, "Pos", "Pos")
@@ -106,11 +122,15 @@ AccessorFunc(Camera, "Ang", "Ang")
 AccessorFunc(Camera, "FOV", "FOV", FORCE_NUMBER)
 AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
 AccessorFunc(Render, "GridMesh", "GridMesh")
+AccessorFunc(SelectMode, "MutiselectMode", "MutiselectMode")
+AccessorFunc(HoloEditor, "LastSelectedProp", "LastSelectedProp")
+AccessorFunc(Mode, "Mode", "Mode")
 
 ------------------------------------------------------------
 --functions
 --init Camera and setup allsetings
 function Init()
+    SelectMode:SetMode(Modes.Select)
     Camera:SetPos(Vector(0, -200, 100))
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
     Camera:SetFOV(90)
@@ -320,7 +340,7 @@ function Trace:IsCursorHit(cursorX, cursorY, viewportW, viewportH, targetPositio
 end
 
 ------------------------------------------------------------
---render lib functions draw stuff
+--render lib functions for draw stuff
 --update grid mesh
 function Render:UpdateGrid(scale)
     local gridMesh = Render:GetGridMesh()
@@ -360,6 +380,7 @@ function Render:DrawGrid()
     end
 end
 
+--draw all prop
 function Render:DrawProps()
     for prop, _ in pairs(Props) do
         local color = prop:GetColor()
@@ -368,3 +389,40 @@ function Render:DrawProps()
         prop:DrawModel()
     end
 end
+
+--draw resize contorll
+function DrawResizeLine()
+    local propCont = table.Count(SelectedProps)
+    if (propCont) then return end
+    local pos = Vector()
+
+    if (SelectMode:GetMutiselectMode()) then
+        for prop, _ in pairs(SelectedProps) do
+            pos = pos + prop:GetPos()
+        end
+
+        pos:Div(propCont)
+    else
+        pos = LastSelectedProp:GetPos()
+    end
+
+    local distance = pos:Distance(Camera:GetPos()) * 0.1
+    local beamScale = distance * 0.1
+    local xPos = pos + Vector(distance, 0, 0)
+    local yPos = pos + Vector(0, distance, 0)
+    local zPos = pos + Vector(0, 0, distance)
+    local pozScale = Vector(beamScale, beamScale, beamScale)
+    local negScale = Vector(-beamScale, -beamScale, -beamScale)
+    local R = Color(255, 0, 0)
+    local G = Color(0, 255, 0)
+    local B = Color(0, 0, 255)
+    render.SetColorMaterialIgnoreZ()
+    render.DrawBeam(pos, zPos, beamScale, 0, 1, G)
+    render.DrawBox(zPos, Angle(0, 0, 0), negScale, pozScale, G, true)
+    render.DrawBeam(pos, yPos, beamScale, 0, 1, B)
+    render.DrawBox(yPos, Angle(0, 0, 0), negScale, pozScale, B, true)
+    render.DrawBeam(pos, xPos, beamScale, 0, 1, R)
+    render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
+    render.DrawSphere(pos, beamScale, 50, 50, G)
+end
+------------------------------------------------------------

@@ -1,14 +1,12 @@
 local Props = HoloEditor.Props
-local SelectedProps = HoloEditor.SelectedProps
 local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
+local SelectMode = HoloEditor.SelectMode
 local PANEL = {}
-AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
 function PANEL:Init()
     self:RequestFocus()
-    self:SetMultiSelectMode(false)
     self.SelectorSize = 5
     self.CamMove = {}
     self.CamMove[KEY_W] = 0
@@ -24,7 +22,6 @@ function PANEL:Init()
     self.CamShiftSpeed = 2
     self.CamInterpolation = 0.1
     self.CamIsRotating = false
-    self.LastSelectedProp = nil
 
     self.OldCursorPos = {
         x = 0,
@@ -32,40 +29,6 @@ function PANEL:Init()
     }
 
     self.PropsLocalCoords = false
-end
-
-function PANEL:DrawResizeLine()
-    if (not self.LastSelectedProp) then return end
-    local pos = Vector()
-
-    if (self.MultiSelectMode) then
-        for prop, _ in pairs(SelectedProps) do
-            pos = pos + prop:GetPos()
-        end
-
-        pos:Div(table.Count(SelectedProps))
-    else
-        pos = self.LastSelectedProp:GetPos()
-    end
-
-    local distance = pos:Distance(Camera:GetPos()) * 0.1
-    local beamScale = distance * 0.1
-    local xPos = pos + Vector(distance, 0, 0)
-    local yPos = pos + Vector(0, distance, 0)
-    local zPos = pos + Vector(0, 0, distance)
-    local pozScale = Vector(beamScale, beamScale, beamScale)
-    local negScale = Vector(-beamScale, -beamScale, -beamScale)
-    local R = Color(255, 0, 0)
-    local G = Color(0, 255, 0)
-    local B = Color(0, 0, 255)
-    render.SetColorMaterialIgnoreZ()
-    render.DrawBeam(pos, zPos, beamScale, 0, 1, G)
-    render.DrawBox(zPos, Angle(0, 0, 0), negScale, pozScale, G, true)
-    render.DrawBeam(pos, yPos, beamScale, 0, 1, B)
-    render.DrawBox(yPos, Angle(0, 0, 0), negScale, pozScale, B, true)
-    render.DrawBeam(pos, xPos, beamScale, 0, 1, R)
-    render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
-    render.DrawSphere(pos, beamScale, 50, 50, G)
 end
 
 function PANEL:OnKeyCodePressed(keyCode)
@@ -106,7 +69,7 @@ function PANEL:OnMousePressed(keyCode)
         end
 
         for prop, _ in pairs(Props) do
-            if (not self.MultiSelectMode) then
+            if (SelectMode:GetMutiselectMode()) then
                 HoloEditor:DeselectProp(prop)
             end
 
@@ -121,13 +84,11 @@ function PANEL:OnMousePressed(keyCode)
         end
 
         if (minDistanceProp) then
-            self.LastSelectedProp = minDistanceProp
+            HoloEditor:SetLastSelectedProp(minDistanceProp)
 
             if (HoloEditor:IsSelectedProp(minDistanceProp)) then
-                print(false)
                 HoloEditor:DeselectProp(minDistanceProp)
             else
-                print(true)
                 HoloEditor:SelectProp(minDistanceProp)
             end
         else
@@ -163,7 +124,7 @@ function PANEL:Paint(w, h)
     Render:DrawProps()
     render.SuppressEngineLighting(true)
     Render:DrawGrid()
-    self:DrawResizeLine()
+    Render:DrawResizeLine()
     render.SuppressEngineLighting(false)
     cam.End3D()
 
