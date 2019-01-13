@@ -2,6 +2,7 @@ local Props = HoloEditor.Props
 local SelectedProps = HoloEditor.SelectedProps
 local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
+local Render = HoloEditor.Render
 local PANEL = {}
 AccessorFunc(PANEL, "MultiSelectMode", "MultiSelectMode", FORCE_BOOL)
 
@@ -9,9 +10,6 @@ function PANEL:Init()
     self:RequestFocus()
     self:SetMultiSelectMode(true)
     self.SelectorSize = 5
-    self.GridMeshVerts = {}
-    self.GridMeshMat = Material("editor/wireframe")
-    self.GridSize = 12
     self.CamMove = {}
     self.CamMove[KEY_W] = 0
     self.CamMove[KEY_S] = 0
@@ -34,21 +32,6 @@ function PANEL:Init()
     }
 
     self.PropsLocalCoords = false
-    self:UpdateGrid(20)
-end
-
-function PANEL:DrawGrid()
-    render.SetMaterial(self.GridMeshMat)
-    mesh.Begin(MATERIAL_LINES, #self.GridMeshVerts)
-
-    for i = 1, #self.GridMeshVerts do
-        mesh.Position(self.GridMeshVerts[i].pos)
-        mesh.TexCoord(0, self.GridMeshVerts[i].u, self.GridMeshVerts[i].v)
-        mesh.Color(17, 74, 122, 200)
-        mesh.AdvanceVertex()
-    end
-
-    mesh.End()
 end
 
 function PANEL:DrawResizeLine()
@@ -187,7 +170,7 @@ function PANEL:Paint(w, h)
     cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
     self:DrawProps()
     render.SuppressEngineLighting(true)
-    self:DrawGrid()
+    Render:DrawGrid()
     self:DrawResizeLine()
     render.SuppressEngineLighting(false)
     cam.End3D()
@@ -196,42 +179,6 @@ function PANEL:Paint(w, h)
         surface.SetDrawColor(Color(255, 255, 255)) -- TODO: try to improve crosshair visibility
         surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
         surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
-    end
-end
-
-function PANEL:UpdateGrid(lines)
-    table.Empty(self.GridMeshVerts)
-    --x:left y:forward z:up
-    local lineLenght = self.GridSize * lines
-    local center = lineLenght * 0.5
-    local offset = Vector(center, center, 0)
-
-    for i = 0, lines do
-        local pos = i * self.GridSize
-
-        table.insert(self.GridMeshVerts, {
-            pos = Vector(pos, lineLenght, 0) - offset,
-            u = 0,
-            v = 0
-        })
-
-        table.insert(self.GridMeshVerts, {
-            pos = Vector(pos, 0, 0) - offset,
-            u = 1,
-            v = 1
-        })
-
-        table.insert(self.GridMeshVerts, {
-            pos = Vector(lineLenght, pos, 0) - offset,
-            u = 0,
-            v = 0
-        })
-
-        table.insert(self.GridMeshVerts, {
-            pos = Vector(0, pos, 0) - offset,
-            u = 1,
-            v = 1
-        })
     end
 end
 

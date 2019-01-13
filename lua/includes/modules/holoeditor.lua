@@ -8,12 +8,12 @@ local util = util
 local math = math
 local Vector = Vector
 local table = table
---local Angle = Angle
 local IsValid = IsValid
 local Color = Color
 local render = render
 local mesh = mesh
 local Material = Material
+local AccessorFunc = AccessorFunc
 ------------------------------------------------------------
 --consts
 local scrW = ScrW()
@@ -22,18 +22,22 @@ local centerW = scrW * 0.5
 local centerH = scrH * 0.5
 
 ------------------------------------------------------------
---utils and other
+--base table and other
 Colors = {
     SELECTION_COLOR = Color(5, 190, 232),
-    DEFAULT_COLOR = Color(255, 255, 255)
+    DEFAULT_COLOR = Color(255, 255, 255),
+    GRID_COLOR = Color(17, 74, 122, 200)
 }
 
 Render = {
+    GridSize,
+    GridMesh,
     Materials = {
         GRID_MATERIAL = Material("editor/wireframe")
     }
 }
 
+local Materials = Render.Materials
 Props = {}
 SelectedProps = {}
 DeselectedProps = {}
@@ -45,6 +49,8 @@ EditorWindows = nil
 AccessorFunc(Camera, "Pos", "Pos")
 AccessorFunc(Camera, "Ang", "Ang")
 AccessorFunc(Camera, "FOV", "FOV", FORCE_NUMBER)
+AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
+AccessorFunc(Render, "GridMesh", "GridMesh")
 
 ------------------------------------------------------------
 --local functions and helpers
@@ -79,6 +85,14 @@ local function AddTo(tbl, key)
     tbl[key] = true
 end
 
+--add vertex to mesh object
+local function AddVertex(pos, u, v, color)
+    mesh.Position(pos)
+    mesh.TexCoord(0, u, v)
+    mesh.Color(color.r, color.g, color.b, color.a)
+    mesh.AdvanceVertex()
+end
+
 ------------------------------------------------------------
 --functions
 --init Camera and setup allsetings
@@ -86,6 +100,8 @@ function Init()
     Camera:SetPos(Vector(0, -200, 100))
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
     Camera:SetFOV(90)
+    Render:SetGridSize(12)
+    Render:UpdateGrid(20)
 end
 
 --open editor window
@@ -104,6 +120,7 @@ end
 function Close()
     if (IsValid(EditorWindows)) then
         EditorWindows:Close()
+        Render:GetGridMesh():Destroy()
     end
 end
 
@@ -294,14 +311,37 @@ end
 --render lib functions draw stuff
 --draw mesh grid
 function Render:DrawGrid()
-    render.SetMaterial(self.Materials.GRID_MATERIAL)
-    mesh.Begin(MATERIAL_LINES, #self.GridMeshVerts)
+    local gridMesh = self:GetGridMesh()
 
-    for i = 1, #self.GridMeshVerts do
-        mesh.Position(self.GridMeshVerts[i].pos)
-        mesh.TexCoord(0, self.GridMeshVerts[i].u, self.GridMeshVerts[i].v)
-        mesh.Color(17, 74, 122, 200)
-        mesh.AdvanceVertex()
+    if (gridMesh) then
+        render.SetMaterial(Materials.GRID_MATERIAL)
+        gridMesh:Draw()
+    end
+end
+
+function Render:UpdateGrid(scale)
+    local gridMesh = Render:GetGridMesh()
+
+    if (gridMesh) then
+        gridMesh:Destroy()
+    end
+
+    Render:SetGridMesh(Mesh())
+    local gridSize = Render:GetGridSize()
+    local gridColor = Colors.GRID_COLOR
+    local lineLenght = gridSize * scale
+    local center = lineLenght * 0.5
+    local offset = Vector(center, center, 0)
+    gridMesh = Render:GetGridMesh()
+    mesh.Begin(gridMesh, MATERIAL_LINES, scale * 2 + 4)
+
+    for i = 1, scale do
+        local pos = (i - 1) * gridSize
+        --x:left y:forward z:up
+        AddVertex(Vector(pos, lineLenght, 0) - offset, 0, 0, gridColor)
+        AddVertex(Vector(pos, 0, 0) - offset, 1, 1, gridColor)
+        AddVertex(Vector(lineLenght, pos, 0) - offset, 0, 0, gridColor)
+        AddVertex(Vector(0, pos, 0) - offset, 1, 1, gridColor)
     end
 
     mesh.End()
