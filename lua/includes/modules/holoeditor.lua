@@ -100,7 +100,7 @@ end
 
 --add prop
 function AddProp(self, propModel, selectProp)
-    selectProp = selectProp or false -- by default, do not select new props
+    selectProp = selectProp or true
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
     prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
