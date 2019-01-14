@@ -258,27 +258,24 @@ function DeselectAllProps()
     end
 end
 
--- save editor project and return compressed data
--- FIXME: save - неподходящее название
+-- save editor project to the file
+-- TODO: что с сохранением в папку внутри папки?
 function SaveProject()
+    local folderName = "holo"
+    local fileName = "project-1.txt"
     local projectProps = {}
 
-    for _, prop in pairs(Props) do
+    for prop, _ in pairs(Props) do
         local propData = {
             Position = prop:GetPos(),
             Angles = prop:GetAngles(),
-            Scale = prop:GetModelScale(),
+            Scale = prop:GetManipulateBoneScale(0),
             Color = prop:GetColor(),
             Material = prop:GetMaterial(),
             Model = prop:GetModel()
         }
 
-        -- TODO:
-        --Bodygroups =
-        --Skin =
-        --Clips =
-        --SubMaterials =
-        --Bones = o_O
+        -- TODO: include Bodygroups, Skin, Clips, SubMaterials
         table.insert(projectProps, propData)
     end
 
@@ -286,7 +283,35 @@ function SaveProject()
         Props = projectProps
     }
 
-    return util.Compress(util.TableToJSON(project, true))
+    local projectString = util.TableToJSON(project, true) --util.Compress()
+
+    if (not file.Exists(folderName, "DATA")) then
+        file.CreateDir(folderName)
+    end
+
+    file.Write(folderName .. "/" .. fileName, projectString)
+end
+
+-- load editor project from the file
+-- returns true if successful, otherwise false
+function LoadProject(self)
+    local folderName = "holo"
+    local fileName = "project-1.txt"
+    if (not file.Exists(folderName .. "/" .. fileName, "DATA")) then return false end
+    projectString = file.Read(folderName .. "/" .. fileName, "DATA")
+    project = util.JSONToTable(projectString) --util.Decompress()
+    RemoveAllProps()
+
+    for i, propData in pairs(project.Props) do
+        local prop = AddProp(self, propData.Model)
+        prop:SetPos(propData.Position)
+        prop:SetAngles(propData.Angles)
+        prop:ManipulateBoneScale(0, propData.Scale)
+        prop:SetColor(Color(255, 255, 0, 255)) -- propData.Color
+        prop:SetMaterial(propData.Material)
+    end
+
+    return true
 end
 
 ------------------------------------------------------------
