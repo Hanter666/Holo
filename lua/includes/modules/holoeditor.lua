@@ -163,6 +163,7 @@ function AddProp(self, propModel, selectProp)
     if (not IsValid(prop)) then return end
     prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
 
+    --prop.
     if (selectProp) then
         self:SelectProp(prop)
     else
@@ -258,11 +259,10 @@ function DeselectAllProps()
     end
 end
 
--- save editor project to the file
--- TODO: что с сохранением в папку внутри папки?
+-- saves project to the file
 function SaveProject()
-    local folderName = "holo"
-    local fileName = "project-1.txt"
+    local Directiory = "holo" -- temp
+    local fileName = "delorean_output.txt"
     local projectProps = {}
 
     for prop, _ in pairs(Props) do
@@ -270,45 +270,62 @@ function SaveProject()
             Position = prop:GetPos(),
             Angles = prop:GetAngles(),
             Scale = prop:GetManipulateBoneScale(0),
-            Color = prop:GetColor(),
+            Color = prop:GetColor(), -- prop.InitialColor
             Material = prop:GetMaterial(),
-            Model = prop:GetModel()
+            Model = prop:GetModel(),
+            IsFullbright = prop.IsFullbright == true,
+            Skin = prop:GetSkin()
         }
 
-        -- TODO: include Bodygroups, Skin, Clips, SubMaterials
+        -- TODO: include Bodygroups, Clips, SubMaterials
         table.insert(projectProps, propData)
     end
 
     local project = {
+        FormatVersion = 0,
         Props = projectProps
     }
 
-    local projectString = util.TableToJSON(project, true) --util.Compress()
+    --local projectString = util.TableToJSON(project, true)
+    local projectString = util.Compress(util.TableToJSON(project, true))
 
-    if (not file.Exists(folderName, "DATA")) then
-        file.CreateDir(folderName)
+    if (not file.Exists(Directiory, "DATA")) then
+        file.CreateDir(Directiory)
     end
 
-    file.Write(folderName .. "/" .. fileName, projectString)
+    file.Write(Directiory .. "/" .. fileName, projectString)
 end
 
--- load editor project from the file
--- returns true if successful, otherwise false
+-- loads project from the file
+-- returns true if successful, otherwise false and error number
 function LoadProject(self)
-    local folderName = "holo"
-    local fileName = "project-1.txt"
-    if (not file.Exists(folderName .. "/" .. fileName, "DATA")) then return false end
-    projectString = file.Read(folderName .. "/" .. fileName, "DATA")
-    project = util.JSONToTable(projectString) --util.Decompress()
+    local Directiory = "holo"
+    local fileName = "delorean.txt"
+    if (not file.Exists(Directiory .. "/" .. fileName, "DATA")) then return false, 0 end
+    projectString = file.Read(Directiory .. "/" .. fileName, "DATA")
+    --project = util.JSONToTable(projectString)
+    project = util.JSONToTable(util.Decompress(projectString))
+    PrintTable(project)
     RemoveAllProps()
 
     for i, propData in pairs(project.Props) do
-        local prop = AddProp(self, propData.Model)
-        prop:SetPos(propData.Position)
-        prop:SetAngles(propData.Angles)
-        prop:ManipulateBoneScale(0, propData.Scale)
-        prop:SetColor(Color(255, 255, 0, 255)) -- propData.Color
-        prop:SetMaterial(propData.Material)
+        local status, err = pcall(function()
+            local prop = AddProp(self, propData.Model, false)
+            prop:SetPos(propData.Position)
+            prop:SetAngles(propData.Angles)
+            prop:ManipulateBoneScale(0, propData.Scale)
+            prop:SetColor(propData.Color)
+            prop:SetMaterial(propData.Material)
+            prop.IsFullbright = propData.IsFullbright
+            prop:SetSkin(propData.Skin)
+        end)
+
+        if (not status) then
+            RemoveAllProps()
+            print(err)
+
+            return false, 1, err
+        end
     end
 
     return true

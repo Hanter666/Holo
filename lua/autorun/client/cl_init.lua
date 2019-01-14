@@ -6,11 +6,15 @@ include("gui/d_editor.lua")
 HoloEditor:Init()
 
 concommand.Add("holo", function()
-    local prop1 = HoloEditor:AddProp("models/holograms/cube.mdl")
-    HoloEditor:AddProp("models/holograms/sphere.mdl")
-    HoloEditor:AddProp("models/holograms/cube.mdl")
-    HoloEditor:AddProp("models/holograms/cube.mdl")
-    HoloEditor:RemoveProp(prop1)
+    if (HoloEditor:LoadProject()) then
+        --HoloEditor:SaveProject()
+        YEEE = not BOIIIIIII
+    else
+        HoloEditor:AddProp("models/holograms/sphere.mdl")
+        HoloEditor:AddProp("models/holograms/cube.mdl")
+        HoloEditor:AddProp("models/holograms/cube.mdl")
+        HoloEditor:AddProp("models/holograms/sphere.mdl")
+    end
+
     HoloEditor:Open()
-    HoloEditor:LoadProject()
 end)
