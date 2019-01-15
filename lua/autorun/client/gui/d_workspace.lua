@@ -4,7 +4,6 @@ local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
 local SelectMode = HoloEditor.SelectMode
-local Modes = SelectMode.Modes
 local PANEL = {}
 
 function PANEL:Init()
@@ -130,8 +129,11 @@ end
 
 function PANEL:Paint(w, h)
     local x, y = self:LocalToScreen(0, 0)
+    local xw, xh = self:LocalToScreen(self:GetWide(), self:GetTall())
     cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
+    render.SetScissorRect(x, y, xw, xh, true)
     Render:DrawControlls()
+    render.SetScissorRect(0, 0, 0, 0, false)
     cam.End3D()
 
     if (self.CamIsRotating) then
