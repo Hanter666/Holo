@@ -575,3 +575,22 @@ function Util:RemoveCallbacks()
     OnPropSelected.Callbacks = {}
     OnPropDeselected.Callbacks = {}
 end
+
+--print message to console with prefix
+function Util:Log(...)
+    local printResult = "\n"
+    local args = {...}
+    local colorH = args[1]
+
+    if (isnumber(colorH)) then
+        table.remove(args, 1)
+        colorH = 1
+    end
+
+    for k, v in pairs(args) do
+        printResult = printResult .. "\t\t" .. tostring(k) .. ":\t" .. tostring(v) .. "\n"
+    end
+
+    printResult = printResult .. "\n"
+    MsgC(Color(255, 0, 255), "HoloEditor:\t", HSVToColor(colorH, 1, 1), printResult)
+end
