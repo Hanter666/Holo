@@ -10,13 +10,6 @@ concommand.Add("holo", function()
     HoloEditor:AddProp("models/holograms/sphere.mdl")
     HoloEditor:AddProp("models/holograms/cube.mdl")
     HoloEditor:AddProp("models/holograms/cube.mdl")
-    print(HoloEditor.Props.Count)
-    HoloEditor:RemoveProp(prop1)
-    print(HoloEditor.Props.Count)
-
-    for k, v in pairs(HoloEditor.Props) do
-        print(k)
-    end
-
+    --HoloEditor:RemoveProp(prop1)
     HoloEditor:Open()
 end)

@@ -74,7 +74,6 @@ end
 
 --remove value from table by key
 local function RemoveFrom(tbl, key)
-    print(key)
     tbl.key = nil
     tbl[key] = nil
 end
@@ -128,6 +127,7 @@ SelectMode = {
 }
 
 local Modes = SelectMode.Modes
+Util = {}
 ------------------------------------------------------------
 --autogen getter setter for table value
 AccessorFunc(Camera, "Pos", "Pos")
@@ -177,7 +177,6 @@ function AddProp(self, propModel, selectProp)
     util.PrecacheModel(propModel)
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
-    prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
 
     if (selectProp) then
         self:SelectProp(prop)
@@ -186,6 +185,7 @@ function AddProp(self, propModel, selectProp)
     end
 
     AddTo(Props, prop)
+    prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
     OnPropAdded(prop)
 
     return prop
@@ -440,9 +440,11 @@ function Render:DrawResizeControll()
     render.DrawSphere(pos, beamScale, 50, 50, G)
 end
 
+--draw rotate controll
 function Render:DrawRotateControll()
 end
 
+--draw holo count and fps
 function Render:DrawStats2D()
     surface.SetTextColor(255, 255, 255)
     surface.SetTextPos(10, 10)
@@ -450,4 +452,20 @@ function Render:DrawStats2D()
     surface.SetTextPos(10, 20)
     surface.DrawText(string.format("Holos: %d / %d", Props.Count, GetConVar("wire_holograms_max"):GetInt()))
 end
+
 ------------------------------------------------------------
+--util functions
+--return nice model name from model obj
+function Util:GetNiceModelName(prop)
+    local propModel = string.StripExtension(prop:GetModel())
+
+    return string.GetFileFromFilename(propModel)
+end
+
+--clear all callbacks
+function Util:RemoveCallbacks()
+    OnPropAdded.Callbacks = {}
+    OnPropRemoved.Callbacks = {}
+    OnPropSelected.Callbacks = {}
+    OnPropDeselected.Callbacks = {}
+end

@@ -1,3 +1,4 @@
+local Util = HoloEditor.Util
 local PANEL = {}
 
 function PANEL:Init()
@@ -24,6 +25,55 @@ function PANEL:Init()
     self.Tree = vgui.Create("D_Tree", self)
     self.Tree:Dock(RIGHT)
     self.Tree:SetWide(124)
+
+    --TODO: fix code dublication
+    HoloEditor.OnPropAdded:AddCallback(function(prop)
+        local niceName = Util:GetNiceModelName(prop)
+        local treeNode = self.Tree:AddNode(niceName, "icon16/shape_square.png")
+        treeNode.Prop = prop
+
+        function treeNode.DoClick(slf)
+            local nodeProp = slf.Prop
+
+            if (HoloEditor:IsSelectedProp(nodeProp)) then
+                HoloEditor:DeselectProp(nodeProp)
+            else
+                HoloEditor:SelectProp(nodeProp)
+            end
+
+            self:SetSelectedItem(slf)
+        end
+
+        self.Tree:SetSelectedItem(treeNode)
+    end)
+
+    HoloEditor.OnPropRemoved:AddCallback(slf, function(prop)
+        for _, treeNode in pairs(self.Tree.RootNode:GetChildren()) do
+            if (treeNode.Prop == prop) then
+                treeNode:Remove()
+                break
+            end
+        end
+    end)
+
+    HoloEditor.OnPropSelected:AddCallback(function(prop)
+        for _, treeNode in pairs(self.Tree.RootNode.ChildNodes:GetChildren()) do
+            if (treeNode.Prop == prop) then
+                self.Tree:SetSelectedItem(treeNode)
+                break
+            end
+        end
+    end)
+
+    HoloEditor.OnPropDeselected:AddCallback(function(prop)
+        for _, treeNode in pairs(self.Tree.RootNode.ChildNodes:GetChildren()) do
+            if (treeNode.Prop == prop) then
+                self.Tree:SetSelectedItem(treeNode)
+                break
+            end
+        end
+    end)
+
     self.WorkSpace = vgui.Create("D_Workspace", self)
     self.WorkSpace:Dock(FILL)
 end
@@ -36,6 +86,7 @@ function PANEL:Paint(w, h)
 end
 
 function PANEL:OnClose()
+    Util:RemoveCallbacks()
     HoloEditor:RemoveAllProps()
 end
 
