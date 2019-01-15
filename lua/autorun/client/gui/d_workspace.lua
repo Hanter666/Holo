@@ -100,7 +100,7 @@ function PANEL:OnMousePressed(keyCode)
 end
 
 function PANEL:DoDoubleClick()
-    if (table.Count(SelectedProps) == 0) then
+    if (SelectedProps.Count == 0) then
         HoloEditor:SelectAllProps()
     else
         HoloEditor:DeselectAllProps()
@@ -129,19 +129,18 @@ end
 
 function PANEL:Paint(w, h)
     local x, y = self:LocalToScreen(0, 0)
+    local xw, xh = self:LocalToScreen(self:GetWide(), self:GetTall())
     cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
-    Render:DrawProps()
-    render.SuppressEngineLighting(true)
-    Render:DrawGrid()
-    Render:DrawResizeLine()
-    render.SuppressEngineLighting(false)
+    render.SetScissorRect(x, y, xw, xh, true)
+    Render:DrawControlls()
+    render.SetScissorRect(0, 0, 0, 0, false)
     cam.End3D()
 
     if (self.CamIsRotating) then
-        surface.SetDrawColor(Color(255, 255, 255)) -- TODO: try to improve crosshair visibility
-        surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
-        surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
+        Render:DrawCrosshair2D(w, h)
     end
+
+    Render:DrawStats2D()
 end
 
 function PANEL:Think()
@@ -154,9 +153,7 @@ function PANEL:Think()
 
         if (self.CamMove[KEY_LSHIFT] ~= 0) then
             speed = speed * self.CamShiftSpeed
-        end
-
-        if (self.CamMove[KEY_LALT] ~= 0) then
+        elseif (self.CamMove[KEY_LALT] ~= 0) then
             speed = speed * 0.5
         end
 
