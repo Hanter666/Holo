@@ -205,8 +205,9 @@ end
 --add prop
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
-    util.PrecacheModel(propModel)
+    util.PrecacheModel(propModel,RENDERGROUP_BOTH)
     local prop = ClientsideModel(propModel)
+    prop:SetMoveType( MOVETYPE_NONE )
     if (not IsValid(prop)) then return end
 
     if (selectProp) then
