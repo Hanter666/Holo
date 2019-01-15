@@ -170,6 +170,7 @@ SelectMode = {
 
 local Modes = SelectMode.Modes
 Util = {}
+File = {}
 ------------------------------------------------------------
 --autogen getter setter for table value
 AccessorFunc(Camera, "Pos", "Pos")
@@ -209,8 +210,10 @@ function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     util.PrecacheModel(propModel, RENDERGROUP_BOTH)
     local prop = ClientsideModel(propModel)
+    if (not IsValid(prop)) then return end
     local defaultColor = prop:GetColor()
     prop.DefaultColor = defaultColor
+
     function prop:ResetColor()
         self:SetColor(self.DefaultColor)
     end
@@ -219,18 +222,15 @@ function AddProp(self, propModel, selectProp)
         self.DefaultColor = color
     end
 
-    prop:SetMoveType(MOVETYPE_NONE)
-    if (not IsValid(prop)) then return end
-    prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --FIXME: для отладки выделения убрать нахой
+    prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
+    AddTo(Props, prop)
+    OnPropAdded(prop)
+
     if (selectProp) then
         self:SelectProp(prop)
     else
         self:DeselectProp(prop)
     end
-
-    AddTo(Props, prop)
-    prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
-    OnPropAdded(prop)
 
     return prop
 end
@@ -321,7 +321,7 @@ end
 ------------------------------------------------------------
 --file library
 --saves project to the file, overwriting
-function SaveProject(slf, fileName)
+function File:SaveProject(slf, fileName)
     fileName = fileName or "default_output.txt" -- FIXME: только для отладки
     local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     local projectProps = {}
@@ -346,7 +346,6 @@ function SaveProject(slf, fileName)
         Props = projectProps
     }
 
-
     local projectString = util.Compress(util.TableToJSON(project, true))
 
     if (not file.Exists(addonDirectory, "DATA")) then
@@ -358,7 +357,7 @@ end
 
 --loads project from the file
 --returns true if successful, otherwise returns false plus error number
-function LoadProject(slf, fileName)
+function File:LoadProject(slf, fileName)
     fileName = fileName or "default" -- FIXME: только для отладки
     local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     if (not file.Exists(fullFileName, "DATA")) then return false, 0 end
@@ -373,8 +372,8 @@ function LoadProject(slf, fileName)
             prop:SetPos(propData.Position)
             prop:SetAngles(propData.Angles)
             prop:ManipulateBoneScale(0, propData.Scale)
-            --prop:SetDefaultColor(propData.Color) -- FIXME: в новой версии раскомментить
-            prop:SetColor(propData.Color)
+            prop:SetDefaultColor(propData.Color)
+            prop:ResetColor()
             prop:SetMaterial(propData.Material)
             prop.IsFullbright = propData.IsFullbright
             prop:SetSkin(propData.Skin)
@@ -389,8 +388,6 @@ function LoadProject(slf, fileName)
     end
 
     return true
-
-    return util.Compress(util.TableToJSON(project))
 end
 
 ------------------------------------------------------------
@@ -528,6 +525,7 @@ function Render:DrawStats2D()
     surface.DrawText(string.format("Holos: %d / %d", Props.Count, GetConVar("wire_holograms_max"):GetInt()))
 end
 
+--drwa 2d crosshair
 function Render:DrawCrosshair2D(w, h)
     surface.SetDrawColor(Color(255, 255, 255)) -- TODO: try to improve crosshair visibility
     surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)

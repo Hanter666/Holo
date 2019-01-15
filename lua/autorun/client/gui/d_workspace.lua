@@ -48,8 +48,9 @@ function PANEL:OnKeyCodeReleased(keyCode)
 end
 
 function PANEL:OnMousePressed(keyCode)
+    local x, y = self:CursorPos()
+
     if (keyCode == MOUSE_RIGHT) then
-        local x, y = self:CursorPos()
         self.OldCursorPos.x = x
         self.OldCursorPos.y = y
         self.CamIsRotating = true
@@ -66,12 +67,9 @@ function PANEL:OnMousePressed(keyCode)
         local minDistance = math.huge
         local minDistanceProp = nil
         local w, h = self:GetSize()
-        local x, y
 
         if (self.CamIsRotating) then
             x, y = w * 0.5, h * 0.5
-        else
-            x, y = self:CursorPos()
         end
 
         for prop, _ in pairs(Props) do
