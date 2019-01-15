@@ -8,6 +8,10 @@ function PANEL:Init()
     self:SetSize(ScrW(), ScrH())
     self:DockPadding(0, 29, 0, 0)
     self:MakePopup()
+    --TODO: add ang alight menu bar
+    --self.MenuBar = vgui.Create("DMenuBar", self)
+    --self.MenuBar:Dock(TOP)
+    --self.MenuBar:DockMargin(100, 0, 100, 0)
     self.ToolsPanel = vgui.Create("DPanel", self)
     self.ToolsPanel:Dock(LEFT)
     self.ToolsPanel:SetWide(48)
@@ -23,6 +27,7 @@ function PANEL:Init()
         self:DrawOutlinedRect()
     end
 
+    --FIXME: big tree slowdown fps ~50 elements -40 fps
     self.Tree = vgui.Create("D_Tree", self)
     self.Tree:Dock(RIGHT)
     self.Tree:SetWide(124)
@@ -58,21 +63,11 @@ function PANEL:Init()
     end)
 
     HoloEditor.OnPropSelected:AddCallback(function(prop)
-        for _, treeNode in pairs(self.Tree.RootNode.ChildNodes:GetChildren()) do
-            if (treeNode.Prop == prop) then
-                self.Tree:SetSelectedItem(treeNode)
-                break
-            end
-        end
+        self.Tree:ChangeSelection(prop)
     end)
 
     HoloEditor.OnPropDeselected:AddCallback(function(prop)
-        for _, treeNode in pairs(self.Tree.RootNode.ChildNodes:GetChildren()) do
-            if (treeNode.Prop == prop) then
-                self.Tree:SetSelectedItem(treeNode)
-                break
-            end
-        end
+        self.Tree:ChangeSelection(prop)
     end)
 
     self.WorkSpace = vgui.Create("D_Workspace", self)

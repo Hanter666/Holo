@@ -183,7 +183,7 @@ AccessorFunc(SelectMode, "Mode", "Mode", FORCE_NUMBER)
 --init camera and setup all setings
 function Init()
     SelectMode:SetMutiselectMode(true)
-    SelectMode:SetMode(Modes.Rotate)
+    SelectMode:SetMode(Modes.Select)
     Camera:SetPos(Vector(0, -200, 100))
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
     Camera:SetFOV(90)
@@ -206,6 +206,7 @@ end
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     util.PrecacheModel(propModel)
+    --TODO: convert modes to mesh mb it boost fps? (GetRenderMesh())
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
 
@@ -333,7 +334,7 @@ function SaveProject()
         Props = projectProps
     }
 
-    return util.Compress(util.TableToJSON(project, true))
+    return util.Compress(util.TableToJSON(project))
 end
 
 ------------------------------------------------------------
@@ -445,14 +446,12 @@ function Render:DrawMoveOrResizeControll(pos, distance, beamScale, resize)
     local R = Color(255, 0, 0)
     local G = Color(0, 255, 0)
     local B = Color(0, 0, 255)
-    render.SetColorMaterialIgnoreZ()
     render.DrawBeam(pos, zPos, beamScale, 0, 1, G)
     render.DrawBox(zPos, Angle(0, 0, 0), negScale, pozScale, G, true)
     render.DrawBeam(pos, yPos, beamScale, 0, 1, B)
     render.DrawBox(yPos, Angle(0, 0, 0), negScale, pozScale, B, true)
     render.DrawBeam(pos, xPos, beamScale, 0, 1, R)
     render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
-    render.DrawSphere(pos, beamScale, 50, 50, G)
 
     if (resize) then
         render.DrawBox(pos + Vector(beamScale, beamScale, 0), Angle(0, 0, 0), negScale, pozScale, Color(255, 255, 0), true)
@@ -461,7 +460,6 @@ end
 
 --draw rotate controll
 function Render:DrawRotateControll(pos, beamScale)
-    render.SetColorMaterialIgnoreZ()
     DrawCircle3D(pos, beamScale, 90)
 end
 
@@ -479,7 +477,7 @@ function Render:DrawCrosshair2D(w, h)
     surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
     surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
 end
-
+--TODO: optimize render loop for many props
 function Render:DrawControlls()
     local pos = GetSelectedPropsCenter()
     Render:DrawProps()
@@ -490,7 +488,7 @@ function Render:DrawControlls()
         local distance = pos:Distance(Camera:GetPos()) * 0.1
         local beamScale = distance * 0.1
         local mode = SelectMode:GetMode()
-
+        render.SetColorMaterialIgnoreZ()
         if (mode == Modes.Resize) then
             Render:DrawMoveOrResizeControll(pos, distance, beamScale, true)
         elseif (mode == Modes.Move) then
@@ -498,6 +496,7 @@ function Render:DrawControlls()
         elseif (mode == Modes.Rotate) then
             Render:DrawRotateControll(pos, distance)
         end
+        render.DrawSphere(pos, 2, 50, 50, Color(0,255,0))
     end
 
     render.SuppressEngineLighting(false)

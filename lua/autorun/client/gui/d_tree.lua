@@ -51,7 +51,16 @@ function PANEL:SetSelectedItem(node)
 end
 
 function PANEL:GetChildNodes()
-    return self.RootNode.ChildNodes
+    return self.RootNode:GetChildren()
+end
+
+function PANEL:ChangeSelection(prop)
+    for _, treeNode in pairs(self:GetChildNodes()) do
+        if (treeNode.Prop == prop) then
+            self:SetSelectedItem(treeNode)
+            break
+        end
+    end
 end
 
 return vgui.Register("D_Tree", PANEL, "DTree")

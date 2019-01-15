@@ -7,9 +7,11 @@ HoloEditor:Init()
 
 concommand.Add("holo", function()
     local prop1 = HoloEditor:AddProp("models/holograms/rcube_thin.mdl")
-    HoloEditor:AddProp("models/holograms/sphere.mdl")
-    HoloEditor:AddProp("models/holograms/cube.mdl")
-    HoloEditor:AddProp("models/holograms/cube.mdl")
+
+    for i = 1, 50 do
+        HoloEditor:AddProp("models/holograms/sphere.mdl")
+    end
+
     --HoloEditor:RemoveProp(prop1)
     HoloEditor:Open()
 end)
