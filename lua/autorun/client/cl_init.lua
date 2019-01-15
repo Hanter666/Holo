@@ -6,11 +6,10 @@ include("gui/d_editor.lua")
 HoloEditor:Init()
 
 concommand.Add("holo", function()
-
-    if (not HoloEditor:LoadProject("delorean")) then
-      for i = 1, 5 do
-          HoloEditor:AddProp("models/holograms/sphere.mdl")
-      end
+    for i = 1, 5 do
+        HoloEditor:AddProp("models/holograms/sphere.mdl")
     end
+
+    PrintTable(HoloEditor.DeselectedProps)
     HoloEditor:Open()
 end)

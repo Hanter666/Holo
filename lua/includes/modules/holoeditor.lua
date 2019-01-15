@@ -127,9 +127,9 @@ local function DrawCircle3D(pos, radius, segments)
         local endPoint1 = math.cos(point1) * radius
         local startNextPoint1 = math.sin(point2) * radius
         local startNextPoint2 = math.cos(point2) * radius
-        render.DrawLine(pos + Vector(startPoint1, endPoint1, 0), pos + Vector(startNextPoint1, startNextPoint2, 0), Color(255, 0, 0))
-        render.DrawLine(pos + Vector(startPoint1, 0, endPoint1), pos + Vector(startNextPoint1, 0, startNextPoint2), Color(0, 255, 0))
-        render.DrawLine(pos + Vector(0, startPoint1, endPoint1), pos + Vector(0, startNextPoint1, startNextPoint2), Color(0, 0, 255))
+        render.DrawLine(pos + Vector(startPoint1, endPoint1, 0), pos + Vector(startNextPoint1, startNextPoint2, 0), Color(255, 0, 0,100))
+        render.DrawLine(pos + Vector(startPoint1, 0, endPoint1), pos + Vector(startNextPoint1, 0, startNextPoint2), Color(0, 255, 0,100))
+        render.DrawLine(pos + Vector(0, startPoint1, endPoint1), pos + Vector(0, startNextPoint1, startNextPoint2), Color(0, 0, 255,100))
     end
 end
 
@@ -186,7 +186,7 @@ AccessorFunc(SelectMode, "Mode", "Mode", FORCE_NUMBER)
 --init camera and setup all setings
 function Init()
     SelectMode:SetMutiselectMode(true)
-    SelectMode:SetMode(Modes.Select)
+    SelectMode:SetMode(Modes.Resize)
     Camera:SetPos(Vector(0, -200, 100))
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
     Camera:SetFOV(90)
@@ -207,10 +207,10 @@ end
 
 --add prop
 function AddProp(self, propModel, selectProp)
-    selectProp = selectProp or SelectMode:GetMutiselectMode()
     util.PrecacheModel(propModel, RENDERGROUP_BOTH)
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
+    selectProp = selectProp or SelectMode:GetMutiselectMode()
     local defaultColor = prop:GetColor()
     prop.DefaultColor = defaultColor
 
@@ -224,13 +224,14 @@ function AddProp(self, propModel, selectProp)
 
     prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
     AddTo(Props, prop)
-    OnPropAdded(prop)
 
     if (selectProp) then
         self:SelectProp(prop)
     else
         self:DeselectProp(prop)
     end
+
+    OnPropAdded(prop)
 
     return prop
 end
@@ -321,7 +322,7 @@ end
 ------------------------------------------------------------
 --file library
 --saves project to the file, overwriting
-function File:SaveProject(slf, fileName)
+function File:SaveProject(fileName)
     fileName = fileName or "default_output.txt" -- FIXME: только для отладки
     local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     local projectProps = {}
@@ -357,7 +358,7 @@ end
 
 --loads project from the file
 --returns true if successful, otherwise returns false plus error number
-function File:LoadProject(slf, fileName)
+function File:LoadProject(fileName)
     fileName = fileName or "default" -- FIXME: только для отладки
     local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     if (not file.Exists(fullFileName, "DATA")) then return false, 0 end
@@ -382,7 +383,7 @@ function File:LoadProject(slf, fileName)
 
     if (not safe) then
         RemoveAllProps()
-        print(err)
+        Util:Log(err)
 
         return false, 2
     end
@@ -496,9 +497,9 @@ function Render:DrawMoveOrResizeControll(pos, distance, beamScale, resize)
     local zPos = pos + Vector(0, 0, distance)
     local pozScale = Vector(beamScale, beamScale, beamScale)
     local negScale = Vector(-beamScale, -beamScale, -beamScale)
-    local R = Color(255, 0, 0)
-    local G = Color(0, 255, 0)
-    local B = Color(0, 0, 255)
+    local R = Color(255, 0, 0, 100)
+    local G = Color(0, 255, 0, 100)
+    local B = Color(0, 0, 255, 100)
     render.DrawBeam(pos, zPos, beamScale, 0, 1, G)
     render.DrawBox(zPos, Angle(0, 0, 0), negScale, pozScale, G, true)
     render.DrawBeam(pos, yPos, beamScale, 0, 1, B)
@@ -507,7 +508,7 @@ function Render:DrawMoveOrResizeControll(pos, distance, beamScale, resize)
     render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
 
     if (resize) then
-        render.DrawBox(pos + Vector(beamScale, beamScale, 0), Angle(0, 0, 0), negScale, pozScale, Color(255, 255, 0), true)
+        render.DrawBox(pos + Vector(distance, distance, 0), Angle(0, 0, 0), negScale, pozScale, Color(255, 255, 0), true)
     end
 end
 
@@ -553,7 +554,7 @@ function Render:DrawControlls()
             Render:DrawMoveOrResizeControll(pos, distance, beamScale, true)
         end
 
-        render.DrawSphere(pos, 2, 50, 50, Color(0, 255, 0))
+        render.DrawSphere(pos, beamScale, 50, 50, Color(0, 255, 0, 100))
     end
 
     render.SuppressEngineLighting(false)
@@ -581,11 +582,13 @@ function Util:Log(...)
     local printResult = "\n"
     local args = {...}
     local colorH = args[1]
+    print(colorH)
 
     if (isnumber(colorH)) then
         table.remove(args, 1)
-        colorH = 1
     end
+
+    print(colorH)
 
     for k, v in pairs(args) do
         printResult = printResult .. "\t\t" .. tostring(k) .. ":\t" .. tostring(v) .. "\n"
