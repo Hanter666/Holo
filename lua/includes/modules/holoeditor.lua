@@ -188,19 +188,16 @@ function Init()
     Camera:SetAng((Vector(0, 0, 0) - Camera:GetPos()):Angle())
     Camera:SetFOV(90)
     Render:SetGridSize(12)
-    Render:UpdateGrid(19)
 end
 
 --open editor window
 function Open()
-    Render:UpdateGrid(19)
-
     if (IsValid(EditorWindows)) then
         EditorWindows:Close()
-        EditorWindows = vgui.Create("D_HoloEditor")
-    else
-        EditorWindows = vgui.Create("D_HoloEditor")
     end
+
+    Render:UpdateGrid(19)
+    EditorWindows = vgui.Create("D_HoloEditor")
 
     return EditorWindows
 end
