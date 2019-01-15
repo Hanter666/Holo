@@ -206,7 +206,6 @@ end
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     util.PrecacheModel(propModel)
-    --TODO: convert modes to mesh mb it boost fps? (GetRenderMesh())
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
 
