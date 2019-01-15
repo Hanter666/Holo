@@ -4,6 +4,7 @@ local Util = HoloEditor.Util
 local PANEL = {}
 
 function PANEL:Init()
+    --TODO: fix code dublication
     for prop, _ in pairs(Props) do
         local niceName = Util:GetNiceModelName(prop)
         local treeNode = self:AddNode(niceName, "icon16/shape_square.png")
