@@ -65,7 +65,8 @@ local function CreatePropTable()
         else
             mt.Count = mt.Count - 1
         end
-        rawset(self, key, newValue)
+
+        rawset(self, key, value)
     end
 
     return setmetatable({}, mt)
@@ -73,6 +74,8 @@ end
 
 --remove value from table by key
 local function RemoveFrom(tbl, key)
+    print(key)
+    tbl.key = nil
     tbl[key] = nil
 end
 
@@ -171,6 +174,7 @@ end
 --add prop
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
+    util.PrecacheModel( propModel )
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
     prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
@@ -190,11 +194,11 @@ end
 -- remove prop
 function RemoveProp(self, prop)
     if (prop) then
+        OnPropRemoved(prop)
+        prop:Remove()
         RemoveFrom(SelectedProps, prop)
         RemoveFrom(DeselectedProps, prop)
         RemoveFrom(Props, prop)
-        prop:Remove()
-        OnPropRemoved(prop)
     end
 end
 
