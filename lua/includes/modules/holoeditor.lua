@@ -48,15 +48,27 @@ end
 
 --create prop table
 local function CreatePropTable()
-    local mt = {}
-
+    local mt = {Count = 0}
     function mt:__index(key)
-        if (not rawget(self, key)) then return false end
+        if (key == "Count") then
+            return rawget(mt, key)
+        end
+        if (not rawget(self, key)) then
+            return false
+        end
 
         return rawget(self, key)
     end
+    function mt:__newindex(key, value)
+        if (value == nil) then
+            local count = mt.Count > 0 or mt.Count - 1 and 0
+            rawset(mt, "Count", count)
+        else
+            rawset(mt, "Count", mt.Count + 1)
+        end
 
-    return setmetatable({}, mt)
+        rawset(self, key, value)
+    end
 end
 
 --remove value from table by key
@@ -160,7 +172,9 @@ end
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     local prop = ClientsideModel(propModel)
-    if (not IsValid(prop)) then return end
+    if (not IsValid(prop)) then
+        return
+    end
     prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
 
     if (selectProp) then
@@ -389,9 +403,11 @@ function Render:DrawProps()
 end
 
 --draw resize contorll
-function Render:DrawResizeLine()
+function Render:DrawResizeControll()
     local propCont = table.Count(SelectedProps)
-    if (propCont == 0) then return end
+    if (propCont == 0) then
+        return
+    end
     local pos = Vector()
 
     if (SelectMode:GetMutiselectMode()) then
@@ -422,5 +438,8 @@ function Render:DrawResizeLine()
     render.DrawBeam(pos, xPos, beamScale, 0, 1, R)
     render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
     render.DrawSphere(pos, beamScale, 50, 50, G)
+end
+
+function Render:DrawRotateControll()
 end
 ------------------------------------------------------------

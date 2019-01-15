@@ -13,7 +13,8 @@ function PANEL:Init()
     DermaButton:Dock(TOP)
     DermaButton:SetText("Say hi")
     DermaButton:SetSize(250, 30)
-    DermaButton.DoClick = function() end
+    DermaButton.DoClick = function()
+    end
 
     function self.ToolsPanel:Paint(w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(27, 30, 43))
