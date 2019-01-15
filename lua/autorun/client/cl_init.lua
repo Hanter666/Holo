@@ -6,10 +6,7 @@ include("gui/d_editor.lua")
 HoloEditor:Init()
 
 concommand.Add("holo", function()
-    if (HoloEditor:LoadProject()) then
-        --HoloEditor:SaveProject()
-        YEEE = not BOIIIIIII
-    else
+    if (not HoloEditor:LoadProject("delorean")) then
         HoloEditor:AddProp("models/holograms/sphere.mdl")
         HoloEditor:AddProp("models/holograms/cube.mdl")
         HoloEditor:AddProp("models/holograms/cube.mdl")

@@ -22,6 +22,7 @@ local scrW = ScrW()
 local scrH = ScrH()
 local centerW = scrW * 0.5
 local centerH = scrH * 0.5
+local addonDirectory = "holo"
 
 ------------------------------------------------------------
 --local functions and helpers
@@ -161,7 +162,7 @@ function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
-    prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
+    prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --FIXME: для отладки выделения убрать нахой
 
     --prop.
     if (selectProp) then
@@ -259,10 +260,12 @@ function DeselectAllProps()
     end
 end
 
--- saves project to the file
-function SaveProject()
-    local Directiory = "holo" -- temp
-    local fileName = "delorean_output.txt"
+------------------------------------------------------------
+--file library
+--saves project to the file, overwriting
+function SaveProject(slf, fileName)
+    fileName = fileName or "default_output.txt" -- FIXME: только для отладки
+    local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     local projectProps = {}
 
     for prop, _ in pairs(Props) do
@@ -270,14 +273,13 @@ function SaveProject()
             Position = prop:GetPos(),
             Angles = prop:GetAngles(),
             Scale = prop:GetManipulateBoneScale(0),
-            Color = prop:GetColor(), -- prop.InitialColor
+            Color = prop:GetColor(), -- FIXME: в новой версии поменять на prop.DefaultColor,
             Material = prop:GetMaterial(),
             Model = prop:GetModel(),
             IsFullbright = prop.IsFullbright == true,
-            Skin = prop:GetSkin()
+            Skin = prop:GetSkin() -- TODO: include Bodygroups, Clips, SubMaterials
         }
 
-        -- TODO: include Bodygroups, Clips, SubMaterials
         table.insert(projectProps, propData)
     end
 
@@ -286,46 +288,45 @@ function SaveProject()
         Props = projectProps
     }
 
-    --local projectString = util.TableToJSON(project, true)
     local projectString = util.Compress(util.TableToJSON(project, true))
 
-    if (not file.Exists(Directiory, "DATA")) then
-        file.CreateDir(Directiory)
+    if (not file.Exists(addonDirectory, "DATA")) then
+        file.CreateDir(addonDirectory)
     end
 
-    file.Write(Directiory .. "/" .. fileName, projectString)
+    file.Write(fullFileName, projectString)
 end
 
--- loads project from the file
--- returns true if successful, otherwise false and error number
-function LoadProject(self)
-    local Directiory = "holo"
-    local fileName = "delorean.txt"
-    if (not file.Exists(Directiory .. "/" .. fileName, "DATA")) then return false, 0 end
-    projectString = file.Read(Directiory .. "/" .. fileName, "DATA")
-    --project = util.JSONToTable(projectString)
-    project = util.JSONToTable(util.Decompress(projectString))
-    PrintTable(project)
+--loads project from the file
+--returns true if successful, otherwise returns false plus error number
+function LoadProject(slf, fileName)
+    fileName = fileName or "default" -- FIXME: только для отладки
+    local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
+    if (not file.Exists(fullFileName, "DATA")) then return false, 0 end
     RemoveAllProps()
+    projectString = file.Read(fullFileName, "DATA")
+    project = util.JSONToTable(util.Decompress(projectString))
+    if (project == nil) then return false, 1 end
 
-    for i, propData in pairs(project.Props) do
-        local status, err = pcall(function()
-            local prop = AddProp(self, propData.Model, false)
+    local safe, err = pcall(function()
+        for i, propData in pairs(project.Props) do
+            local prop = AddProp(slf, propData.Model, false)
             prop:SetPos(propData.Position)
             prop:SetAngles(propData.Angles)
             prop:ManipulateBoneScale(0, propData.Scale)
+            --prop:SetDefaultColor(propData.Color) -- FIXME: в новой версии раскомментить
             prop:SetColor(propData.Color)
             prop:SetMaterial(propData.Material)
             prop.IsFullbright = propData.IsFullbright
             prop:SetSkin(propData.Skin)
-        end)
-
-        if (not status) then
-            RemoveAllProps()
-            print(err)
-
-            return false, 1, err
         end
+    end)
+
+    if (not safe) then
+        RemoveAllProps()
+        print(err)
+
+        return false, 2
     end
 
     return true
