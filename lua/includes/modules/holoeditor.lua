@@ -174,7 +174,7 @@ end
 --add prop
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
-    util.PrecacheModel( propModel )
+    util.PrecacheModel(propModel)
     local prop = ClientsideModel(propModel)
     if (not IsValid(prop)) then return end
     prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
@@ -441,5 +441,13 @@ function Render:DrawResizeControll()
 end
 
 function Render:DrawRotateControll()
+end
+
+function Render:DrawStats2D()
+    surface.SetTextColor(255, 255, 255)
+    surface.SetTextPos(10, 10)
+    surface.DrawText(string.format("FPS: %d", 1 / RealFrameTime()))
+    surface.SetTextPos(10, 20)
+    surface.DrawText(string.format("Holos: %d / %d", Props.Count, GetConVar("wire_holograms_max"):GetInt()))
 end
 ------------------------------------------------------------

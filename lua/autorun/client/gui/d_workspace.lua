@@ -143,6 +143,8 @@ function PANEL:Paint(w, h)
         surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
         surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
     end
+
+    Render:DrawStats2D()
 end
 
 function PANEL:Think()
