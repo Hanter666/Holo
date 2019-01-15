@@ -205,9 +205,9 @@ end
 --add prop
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
-    util.PrecacheModel(propModel,RENDERGROUP_BOTH)
+    util.PrecacheModel(propModel, RENDERGROUP_BOTH)
     local prop = ClientsideModel(propModel)
-    prop:SetMoveType( MOVETYPE_NONE )
+    prop:SetMoveType(MOVETYPE_NONE)
     if (not IsValid(prop)) then return end
 
     if (selectProp) then
@@ -477,6 +477,7 @@ function Render:DrawCrosshair2D(w, h)
     surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
     surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
 end
+
 --TODO: optimize render loop for many props
 function Render:DrawControlls()
     local pos = GetSelectedPropsCenter()
@@ -489,14 +490,16 @@ function Render:DrawControlls()
         local beamScale = distance * 0.1
         local mode = SelectMode:GetMode()
         render.SetColorMaterialIgnoreZ()
-        if (mode == Modes.Resize) then
-            Render:DrawMoveOrResizeControll(pos, distance, beamScale, true)
-        elseif (mode == Modes.Move) then
+
+        if (mode == Modes.Move) then
             Render:DrawMoveOrResizeControll(pos, distance, beamScale)
         elseif (mode == Modes.Rotate) then
             Render:DrawRotateControll(pos, distance)
+        elseif (mode == Modes.Resize) then
+            Render:DrawMoveOrResizeControll(pos, distance, beamScale, true)
         end
-        render.DrawSphere(pos, 2, 50, 50, Color(0,255,0))
+
+        render.DrawSphere(pos, 2, 50, 50, Color(0, 255, 0))
     end
 
     render.SuppressEngineLighting(false)

@@ -6,9 +6,7 @@ include("gui/d_editor.lua")
 HoloEditor:Init()
 
 concommand.Add("holo", function()
-    local prop1 = HoloEditor:AddProp("models/holograms/rcube_thin.mdl")
-
-    for i = 1, 50 do
+    for i = 1, 5 do
         HoloEditor:AddProp("models/holograms/sphere.mdl")
     end
 
