@@ -4,6 +4,7 @@ local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
 local SelectMode = HoloEditor.SelectMode
+local Modes = SelectMode.Modes
 local PANEL = {}
 
 function PANEL:Init()
@@ -130,18 +131,11 @@ end
 function PANEL:Paint(w, h)
     local x, y = self:LocalToScreen(0, 0)
     cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
-    Render:DrawProps()
-    render.SuppressEngineLighting(true)
-    Render:DrawGrid()
-    --Render:DrawResizeControll()
-    Render:DrawRotateControll()
-    render.SuppressEngineLighting(false)
+    Render:DrawControlls()
     cam.End3D()
 
     if (self.CamIsRotating) then
-        surface.SetDrawColor(Color(255, 255, 255)) -- TODO: try to improve crosshair visibility
-        surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
-        surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
+        Render:DrawCrosshair2D(w, h)
     end
 
     Render:DrawStats2D()

@@ -19,7 +19,7 @@ function PANEL:Init()
                 HoloEditor:SelectProp(nodeProp)
             end
 
-            self:SetSelectedItem(slf)
+            return false
         end
 
         self:SetSelectedItem(treeNode)

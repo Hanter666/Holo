@@ -1,4 +1,5 @@
 local Util = HoloEditor.Util
+local Render = HoloEditor.Render
 local PANEL = {}
 
 function PANEL:Init()
@@ -41,7 +42,7 @@ function PANEL:Init()
                 HoloEditor:SelectProp(nodeProp)
             end
 
-            self:SetSelectedItem(slf)
+            return false
         end
 
         self.Tree:SetSelectedItem(treeNode)
@@ -88,6 +89,7 @@ end
 function PANEL:OnClose()
     Util:RemoveCallbacks()
     HoloEditor:RemoveAllProps()
+    Render:GetGridMesh():Destroy()
 end
 
 return vgui.Register("D_HoloEditor", PANEL, "DFrame")
