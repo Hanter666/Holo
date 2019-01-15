@@ -60,7 +60,11 @@ local function CreatePropTable()
     end
 
     function mt:__newindex(key, value)
-        mt.Count = mt.Count + 1
+        if (value) then
+            mt.Count = mt.Count + 1
+        else
+            mt.Count = mt.Count - 1
+        end
         rawset(self, key, newValue)
     end
 
@@ -69,10 +73,6 @@ end
 
 --remove value from table by key
 local function RemoveFrom(tbl, key)
-    if (tbl.Count) then
-        tbl.Count = tbl.Count - 1
-    end
-
     tbl[key] = nil
 end
 
