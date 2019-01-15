@@ -21,6 +21,7 @@ local surface = surface
 local setmetatable = setmetatable
 local rawget = rawget
 local rawset = rawset
+local string = string
 ------------------------------------------------------------
 --consts
 local scrW = ScrW()
@@ -207,6 +208,16 @@ function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     util.PrecacheModel(propModel, RENDERGROUP_BOTH)
     local prop = ClientsideModel(propModel)
+    local defaultColor = prop:GetColor()
+    prop.DefaultColor = defaultColor
+    function prop:ResetColor()
+        self:SetColor(self.DefaultColor)
+    end
+
+    function prop:SetDefaultColor(color)
+        self.DefaultColor = color
+    end
+
     prop:SetMoveType(MOVETYPE_NONE)
     if (not IsValid(prop)) then return end
 
@@ -281,7 +292,7 @@ function DeselectProp(slf, prop)
     if (prop) then
         AddTo(DeselectedProps, prop)
         RemoveFrom(SelectedProps, prop)
-        prop:SetColor(Colors.DEFAULT_COLOR)
+        prop:ResetColor()
         OnPropDeselected(prop)
     end
 end

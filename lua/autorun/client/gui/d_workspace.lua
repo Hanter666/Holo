@@ -153,9 +153,7 @@ function PANEL:Think()
 
         if (self.CamMove[KEY_LSHIFT] ~= 0) then
             speed = speed * self.CamShiftSpeed
-        end
-
-        if (self.CamMove[KEY_LALT] ~= 0) then
+        elseif (self.CamMove[KEY_LALT] ~= 0) then
             speed = speed * 0.5
         end
 

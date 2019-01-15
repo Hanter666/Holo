@@ -51,11 +51,13 @@ function PANEL:SetSelectedItem(node)
 end
 
 function PANEL:GetChildNodes()
-    return self.RootNode:GetChildren()
+    return self.RootNode.ChildNodes:GetChildren()
 end
 
 function PANEL:ChangeSelection(prop)
     for _, treeNode in pairs(self:GetChildNodes()) do
+        print(treeNode.Prop)
+
         if (treeNode.Prop == prop) then
             self:SetSelectedItem(treeNode)
             break

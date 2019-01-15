@@ -49,10 +49,9 @@ function PANEL:Init()
 
             return false
         end
-
-        self.Tree:SetSelectedItem(treeNode)
     end)
 
+    --self.Tree:SetSelectedItem(treeNode)
     HoloEditor.OnPropRemoved:AddCallback(slf, function(prop)
         for _, treeNode in pairs(self.Tree.RootNode:GetChildren()) do
             if (treeNode.Prop == prop) then
