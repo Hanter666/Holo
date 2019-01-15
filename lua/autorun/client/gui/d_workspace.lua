@@ -100,7 +100,7 @@ function PANEL:OnMousePressed(keyCode)
 end
 
 function PANEL:DoDoubleClick()
-    if (table.Count(SelectedProps) == 0) then
+    if (SelectedProps.Count == 0) then
         HoloEditor:SelectAllProps()
     else
         HoloEditor:DeselectAllProps()

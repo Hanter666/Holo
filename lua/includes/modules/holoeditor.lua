@@ -48,31 +48,31 @@ end
 
 --create prop table
 local function CreatePropTable()
-    local mt = {Count = 0}
+    local mt = {
+        Count = 0
+    }
+
     function mt:__index(key)
-        if (key == "Count") then
-            return rawget(mt, key)
-        end
-        if (not rawget(self, key)) then
-            return false
-        end
+        if (key == "Count") then return mt.Count end
+        if (not rawget(self, key)) then return false end
 
         return rawget(self, key)
     end
-    function mt:__newindex(key, value)
-        if (value == nil) then
-            local count = mt.Count > 0 or mt.Count - 1 and 0
-            rawset(mt, "Count", count)
-        else
-            rawset(mt, "Count", mt.Count + 1)
-        end
 
-        rawset(self, key, value)
+    function mt:__newindex(key, value)
+        mt.Count = mt.Count + 1
+        rawset(self, key, newValue)
     end
+
+    return setmetatable({}, mt)
 end
 
 --remove value from table by key
 local function RemoveFrom(tbl, key)
+    if (tbl.Count) then
+        tbl.Count = tbl.Count - 1
+    end
+
     tbl[key] = nil
 end
 
@@ -172,10 +172,8 @@ end
 function AddProp(self, propModel, selectProp)
     selectProp = selectProp or SelectMode:GetMutiselectMode()
     local prop = ClientsideModel(propModel)
-    if (not IsValid(prop)) then
-        return
-    end
-    prop:SetPos(Vector(20 * table.Count(Props), 0, 0)) --TODO: для отладки выделения убрать нахой
+    if (not IsValid(prop)) then return end
+    prop:SetPos(Vector(20 * Props.Count, 0, 0)) --TODO: для отладки выделения убрать нахой
 
     if (selectProp) then
         self:SelectProp(prop)
@@ -404,10 +402,8 @@ end
 
 --draw resize contorll
 function Render:DrawResizeControll()
-    local propCont = table.Count(SelectedProps)
-    if (propCont == 0) then
-        return
-    end
+    local propCont = SelectedProps.Count
+    if (propCont == 0) then return end
     local pos = Vector()
 
     if (SelectMode:GetMutiselectMode()) then
