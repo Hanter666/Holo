@@ -4,6 +4,7 @@ local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
 local SelectMode = HoloEditor.SelectMode
+local Modes = SelectMode.Modes
 local PANEL = {}
 
 function PANEL:Init()
@@ -49,6 +50,7 @@ end
 
 function PANEL:OnMousePressed(keyCode)
     local x, y = self:CursorPos()
+    local w, h = self:GetSize()
 
     if (keyCode == MOUSE_RIGHT) then
         self.OldCursorPos.x = x
@@ -64,35 +66,12 @@ function PANEL:OnMousePressed(keyCode)
         end
 
         self.LastClickTime = SysTime()
-        local minDistance = math.huge
-        local minDistanceProp = nil
-        local w, h = self:GetSize()
+        local editorMode = SelectMode:GetMode()
+        local isMutiselectMode = SelectMode:GetMutiselectMode()
 
-        if (self.CamIsRotating) then
-            x, y = w * 0.5, h * 0.5
-        end
-
-        for prop, _ in pairs(Props) do
-            if (not SelectMode:GetMutiselectMode()) then
-                HoloEditor:DeselectProp(prop)
-            end
-
-            local propPos = prop:GetPos()
-            local propRadius = prop:GetModelRadius()
-            local isHit, distanseToCamera = Trace:IsCursorHit(x, y, w, h, propPos, propRadius)
-
-            if (isHit and distanseToCamera < minDistance) then
-                minDistance = distanseToCamera
-                minDistanceProp = prop
-            end
-        end
-
-        if (minDistanceProp) then
-            if (HoloEditor:IsSelectedProp(minDistanceProp)) then
-                HoloEditor:DeselectProp(minDistanceProp)
-            else
-                HoloEditor:SelectProp(minDistanceProp)
-            end
+        if (editorMode == Modes.Move) then
+            --TODO: readl radius not 5
+            local isHit, distance = Trace:IsCursorHit(x, y, w, h, targetPosition, 5)
         end
     end
 end

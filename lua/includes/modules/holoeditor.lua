@@ -102,43 +102,20 @@ local function AddVertex(pos, u, v, color)
     mesh.AdvanceVertex()
 end
 
-local function GetSelectedPropsCenter()
-    local propCont = SelectedProps.Count
-    if (propCont == 0) then return end
-    local pos = Vector()
-    local selectMode = SelectMode:GetMutiselectMode()
-
-    for prop, _ in pairs(SelectedProps) do
-        if (selectMode) then
-            pos = pos + prop:GetPos()
-        else
-            pos = prop:GetPos()
-        end
-    end
-
-    return selectMode == true and pos:Div(propCont) or pos
-end
-
-local function DrawCircle3D(pos, radius, segments)
-    for i = 0, segments do
-        local point1 = math.rad((i / 30) * -360)
-        local point2 = math.rad(((i + 1) / 30) * -360)
-        local startPoint1 = math.sin(point1) * radius
-        local endPoint1 = math.cos(point1) * radius
-        local startNextPoint1 = math.sin(point2) * radius
-        local startNextPoint2 = math.cos(point2) * radius
-        render.DrawLine(pos + Vector(startPoint1, endPoint1, 0), pos + Vector(startNextPoint1, startNextPoint2, 0), Color(255, 0, 0,100))
-        render.DrawLine(pos + Vector(startPoint1, 0, endPoint1), pos + Vector(startNextPoint1, 0, startNextPoint2), Color(0, 255, 0,100))
-        render.DrawLine(pos + Vector(0, startPoint1, endPoint1), pos + Vector(0, startNextPoint1, startNextPoint2), Color(0, 0, 255,100))
-    end
-end
-
 ------------------------------------------------------------
 --base table and other
 Colors = {
     SELECTION_COLOR = Color(5, 190, 232),
     DEFAULT_COLOR = Color(255, 255, 255),
-    GRID_COLOR = Color(17, 74, 122, 200)
+    GRID_COLOR = Color(17, 74, 122, 200),
+    RED = Color(255, 0, 0),
+    GREEN = Color(0, 255, 0),
+    BLUE = Color(0, 0, 255),
+    YELLOW = Color(255, 255, 0),
+    RED_A = Color(255, 0, 0, 100),
+    GREEN_A = Color(0, 255, 0, 100),
+    BLUE_A = Color(0, 0, 255, 100),
+    YELLOW_A = Color(255, 255, 0, 100)
 }
 
 Render = {
@@ -149,7 +126,6 @@ Render = {
     }
 }
 
-local Materials = Render.Materials
 Props = CreatePropTable()
 SelectedProps = CreatePropTable()
 DeselectedProps = CreatePropTable()
@@ -168,9 +144,22 @@ SelectMode = {
     }
 }
 
-local Modes = SelectMode.Modes
 Util = {}
 File = {}
+
+ControllsPosition = {
+    Local = false,
+    X = Vector(),
+    Y = Vector(),
+    Z = Vector(),
+    W = Vector(),
+    Center = Vector(),
+    Angle = Angle(),
+    BeamScale = 0
+}
+
+local Materials = Render.Materials
+local Modes = SelectMode.Modes
 ------------------------------------------------------------
 --autogen getter setter for table value
 AccessorFunc(Camera, "Pos", "Pos")
@@ -180,6 +169,14 @@ AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
 AccessorFunc(Render, "GridMesh", "GridMesh")
 AccessorFunc(SelectMode, "MutiselectMode", "MutiselectMode", FORCE_BOOL)
 AccessorFunc(SelectMode, "Mode", "Mode", FORCE_NUMBER)
+AccessorFunc(ControllsPosition, "Local", "Local", FORCE_BOOL)
+AccessorFunc(ControllsPosition, "X", "X")
+AccessorFunc(ControllsPosition, "Y", "Y")
+AccessorFunc(ControllsPosition, "Z", "Z")
+AccessorFunc(ControllsPosition, "W", "W")
+AccessorFunc(ControllsPosition, "Center", "Center")
+AccessorFunc(ControllsPosition, "Angle", "Angle")
+AccessorFunc(ControllsPosition, "BeamScale", "BeamScale", FORCE_NUMBER)
 
 ------------------------------------------------------------
 --functions
@@ -282,9 +279,12 @@ end
 -- select prop
 function SelectProp(slf, prop)
     if (prop) then
+        local propPos = prop:GetPos()
+        local propAng = prop:GetAngles()
         AddTo(SelectedProps, prop)
         RemoveFrom(DeselectedProps, prop)
         prop:SetColor(Colors.SELECTION_COLOR)
+        ControllsPosition:Update(propPos, propAng)
         OnPropSelected(prop)
     end
 end
@@ -292,9 +292,12 @@ end
 -- deselect prop
 function DeselectProp(slf, prop)
     if (prop) then
+        local propPos = prop:GetPos()
+        local propAng = prop:GetAngles()
         AddTo(DeselectedProps, prop)
         RemoveFrom(SelectedProps, prop)
         prop:ResetColor()
+        ControllsPosition:Update(propPos * -1, propAng)
         OnPropDeselected(prop)
     end
 end
@@ -302,20 +305,14 @@ end
 -- select all props
 function SelectAllProps()
     for prop, _ in pairs(DeselectedProps) do
-        AddTo(SelectedProps, prop)
-        RemoveFrom(DeselectedProps, prop)
-        prop:SetColor(Colors.SELECTION_COLOR)
-        OnPropSelected(prop)
+        SelectProp(prop)
     end
 end
 
 -- deselect all props
 function DeselectAllProps()
     for prop, _ in pairs(SelectedProps) do
-        AddTo(DeselectedProps, prop)
-        RemoveFrom(SelectedProps, prop)
-        prop:SetColor(Colors.DEFAULT_COLOR)
-        OnPropDeselected(prop)
+        DeselectProp(prop)
     end
 end
 
@@ -323,7 +320,7 @@ end
 --file library
 --saves project to the file, overwriting
 function File:SaveProject(fileName)
-    fileName = fileName or "default_output.txt" -- FIXME: только для отладки
+    fileName = fileName or "default_output.txt" -- FIXME: только для о��ладки
     local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     local projectProps = {}
 
@@ -332,7 +329,7 @@ function File:SaveProject(fileName)
             Position = prop:GetPos(),
             Angles = prop:GetAngles(),
             Scale = prop:GetManipulateBoneScale(0),
-            Color = prop:GetColor(), -- FIXME: в новой версии поменять на prop.DefaultColor,
+            Color = prop:GetColor(),
             Material = prop:GetMaterial(),
             Model = prop:GetModel(),
             IsFullbright = prop.IsFullbright == true,
@@ -405,6 +402,7 @@ OnPropDeselected = Callback()
 ------------------------------------------------------------
 --trace lib functions for hit testing in 3D space
 --get aim direction from screen to world
+--@return util.AimVector(ang, fov, x, y, w, h)
 function Trace:AimDirection(ang, fov, x, y, w, h)
     ang = ang or Camera:GetAng()
     endPos = endPos or Camera:GetPos()
@@ -418,6 +416,7 @@ function Trace:AimDirection(ang, fov, x, y, w, h)
 end
 
 --get trace result
+--@return isHit,distance to target from camera
 function Trace:IsLineHit(traceOrigin, traceDirection, targetPosition, targetRadius)
     local dotNormal = traceDirection:Dot((targetPosition - traceOrigin):GetNormalized())
     local dot = math.acos(dotNormal)
@@ -428,6 +427,7 @@ function Trace:IsLineHit(traceOrigin, traceDirection, targetPosition, targetRadi
 end
 
 --get trace result for cursor
+--@return isHit,distance to target from camera
 function Trace:IsCursorHit(cursorX, cursorY, viewportW, viewportH, targetPosition, targetRadius)
     local traceOrigin = Camera:GetPos()
     local traceDirection = Trace:AimDirection(_, _, cursorX, cursorY, viewportW, viewportH)
@@ -491,30 +491,44 @@ function Render:DrawProps()
 end
 
 --draw resize contorll
-function Render:DrawMoveOrResizeControll(pos, distance, beamScale, resize)
-    local xPos = pos + Vector(distance, 0, 0)
-    local yPos = pos + Vector(0, distance, 0)
-    local zPos = pos + Vector(0, 0, distance)
+function Render:DrawMoveOrResizeControll(resize)
+    local pos = ControllsPosition:GetCenter()
+    local xPos = ControllsPosition:GetX()
+    local yPos = ControllsPosition:GetY()
+    local zPos = ControllsPosition:GetZ()
+    local beamScale = ControllsPosition:GetBeamScale()
     local pozScale = Vector(beamScale, beamScale, beamScale)
     local negScale = Vector(-beamScale, -beamScale, -beamScale)
-    local R = Color(255, 0, 0, 100)
-    local G = Color(0, 255, 0, 100)
-    local B = Color(0, 0, 255, 100)
-    render.DrawBeam(pos, zPos, beamScale, 0, 1, G)
-    render.DrawBox(zPos, Angle(0, 0, 0), negScale, pozScale, G, true)
-    render.DrawBeam(pos, yPos, beamScale, 0, 1, B)
-    render.DrawBox(yPos, Angle(0, 0, 0), negScale, pozScale, B, true)
-    render.DrawBeam(pos, xPos, beamScale, 0, 1, R)
-    render.DrawBox(xPos, Angle(0, 0, 0), negScale, pozScale, R, true)
+    render.DrawLine(pos, pos + xPos, Colors.RED_A)
+    render.DrawBox(pos + xPos, Angle(0, 0, 0), negScale, pozScale, Colors.RED_A, true)
+    render.DrawLine(pos, pos + yPos, Colors.BLUE_A)
+    render.DrawBox(pos + yPos, Angle(0, 0, 0), negScale, pozScale, Colors.BLUE_A, true)
+    render.DrawLine(pos, pos + zPos, Colors.GREEN_A)
+    render.DrawBox(pos + zPos, Angle(0, 0, 0), negScale, pozScale, Colors.GREEN_A, true)
 
     if (resize) then
-        render.DrawBox(pos + Vector(distance, distance, 0), Angle(0, 0, 0), negScale, pozScale, Color(255, 255, 0), true)
+        local wPos = ControllsPosition:GetW()
+        render.DrawLine(pos, pos + wPos, Colors.YELLOW_A)
+        render.DrawBox(pos + wPos, Angle(0, 0, 0), negScale, pozScale, Colors.YELLOW_A, true)
     end
 end
 
 --draw rotate controll
-function Render:DrawRotateControll(pos, beamScale)
-    DrawCircle3D(pos, beamScale, 90)
+function Render:DrawRotateControll()
+    local radius = ControllsPosition:GetBeamScale()
+    local pos = ControllsPosition:GetCenter()
+
+    for i = 0, 30 do
+        local point1 = math.rad((i / 30) * -360)
+        local point2 = math.rad(((i + 1) / 30) * -360)
+        local startPoint1 = math.sin(point1) * radius
+        local endPoint1 = math.cos(point1) * radius
+        local startNextPoint1 = math.sin(point2) * radius
+        local startNextPoint2 = math.cos(point2) * radius
+        render.DrawLine(pos + Vector(startPoint1, endPoint1, 0), pos + Vector(startNextPoint1, startNextPoint2, 0), Colors.RED_A)
+        render.DrawLine(pos + Vector(startPoint1, 0, endPoint1), pos + Vector(startNextPoint1, 0, startNextPoint2), Colors.GREEN_A)
+        render.DrawLine(pos + Vector(0, startPoint1, endPoint1), pos + Vector(0, startNextPoint1, startNextPoint2), Colors.BLUE_A)
+    end
 end
 
 --draw holo count and fps
@@ -528,35 +542,28 @@ end
 
 --drwa 2d crosshair
 function Render:DrawCrosshair2D(w, h)
-    surface.SetDrawColor(Color(255, 255, 255)) -- TODO: try to improve crosshair visibility
+    surface.SetDrawColor(Colors.DEFAULT_COLOR) -- TODO: try to improve crosshair visibility
     surface.DrawLine(w * 0.5 - 12, h * 0.5, w * 0.5 + 12, h * 0.5)
     surface.DrawLine(w * 0.5, h * 0.5 - 12, w * 0.5, h * 0.5 + 12)
 end
 
 --TODO: optimize render loop for many props
 function Render:DrawControlls()
-    local pos = GetSelectedPropsCenter()
     Render:DrawProps()
     render.SuppressEngineLighting(true)
     Render:DrawGrid()
+    local mode = SelectMode:GetMode()
+    render.SetColorMaterialIgnoreZ()
 
-    if (pos) then
-        local distance = pos:Distance(Camera:GetPos()) * 0.1
-        local beamScale = distance * 0.1
-        local mode = SelectMode:GetMode()
-        render.SetColorMaterialIgnoreZ()
-
-        if (mode == Modes.Move) then
-            Render:DrawMoveOrResizeControll(pos, distance, beamScale)
-        elseif (mode == Modes.Rotate) then
-            Render:DrawRotateControll(pos, distance)
-        elseif (mode == Modes.Resize) then
-            Render:DrawMoveOrResizeControll(pos, distance, beamScale, true)
-        end
-
-        render.DrawSphere(pos, beamScale, 50, 50, Color(0, 255, 0, 100))
+    if (mode == Modes.Move) then
+        Render:DrawMoveOrResizeControll()
+    elseif (mode == Modes.Rotate) then
+        Render:DrawRotateControll()
+    elseif (mode == Modes.Resize) then
+        Render:DrawMoveOrResizeControll(true)
     end
 
+    render.DrawSphere(ControllsPosition:GetCenter(), ControllsPosition:GetBeamScale(), 50, 50, Color(0, 255, 0, 100))
     render.SuppressEngineLighting(false)
 end
 
@@ -596,4 +603,25 @@ function Util:Log(...)
 
     printResult = printResult .. "\n"
     MsgC(Color(255, 0, 255), "HoloEditor:\t", HSVToColor(colorH, 1, 1), printResult)
+end
+
+------------------------------------------------------------
+--lib for change control position
+--update controls position for nex rendering
+function ControllsPosition:Update(propPos, propAng)
+    if (SelectMode:GetMutiselectMode()) then
+        self:SetCenter(self:GetCenter() + propPos)
+        self:SetAngle(Angle())
+    else
+        self:SetCenter(propPos)
+        self:SetAngle(isLocalMode and propAng or Angle())
+    end
+
+    local distance = self:GetCenter():Distance(Camera:GetPos()) * 0.1
+    local beamScale = distance * 0.1
+    self:SetX(Vector(distance, 0, 0))
+    self:SetY(Vector(0, distance, 0))
+    self:SetZ(Vector(0, 0, distance))
+    self:SetW(Vector(distance, distance, 0))
+    self:SetBeamScale(beamScale)
 end
