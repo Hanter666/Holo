@@ -5,6 +5,7 @@ local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
 local SelectMode = HoloEditor.SelectMode
 local Modes = SelectMode.Modes
+local ControllsPosition = HoloEditor.ControllsPosition
 local PANEL = {}
 
 function PANEL:Init()
@@ -135,6 +136,7 @@ function PANEL:Think()
         end
 
         Camera:SetPos(Camera:GetPos() + direction * speed)
+        ControllsPosition:UpdateScale()
     end
 end
 

@@ -292,12 +292,12 @@ end
 -- deselect prop
 function DeselectProp(slf, prop)
     if (prop) then
-        local propPos = prop:GetPos()
+        local propPos = prop:GetPos() * -1
         local propAng = prop:GetAngles()
         AddTo(DeselectedProps, prop)
         RemoveFrom(SelectedProps, prop)
         prop:ResetColor()
-        ControllsPosition:Update(propPos * -1, propAng)
+        ControllsPosition:Update(propPos, propAng)
         OnPropDeselected(prop)
     end
 end
@@ -552,18 +552,22 @@ function Render:DrawControlls()
     Render:DrawProps()
     render.SuppressEngineLighting(true)
     Render:DrawGrid()
-    local mode = SelectMode:GetMode()
-    render.SetColorMaterialIgnoreZ()
 
-    if (mode == Modes.Move) then
-        Render:DrawMoveOrResizeControll()
-    elseif (mode == Modes.Rotate) then
-        Render:DrawRotateControll()
-    elseif (mode == Modes.Resize) then
-        Render:DrawMoveOrResizeControll(true)
+    if (SelectedProps.Count > 0) then
+        render.SetColorMaterialIgnoreZ()
+        local mode = SelectMode:GetMode()
+
+        if (mode == Modes.Move) then
+            Render:DrawMoveOrResizeControll()
+        elseif (mode == Modes.Rotate) then
+            Render:DrawRotateControll()
+        elseif (mode == Modes.Resize) then
+            Render:DrawMoveOrResizeControll(true)
+        end
+
+        render.DrawSphere(ControllsPosition:GetCenter(), ControllsPosition:GetBeamScale(), 50, 50, Color(0, 255, 0, 100))
     end
 
-    render.DrawSphere(ControllsPosition:GetCenter(), ControllsPosition:GetBeamScale(), 50, 50, Color(0, 255, 0, 100))
     render.SuppressEngineLighting(false)
 end
 
@@ -595,8 +599,6 @@ function Util:Log(...)
         table.remove(args, 1)
     end
 
-    print(colorH)
-
     for k, v in pairs(args) do
         printResult = printResult .. "\t\t" .. tostring(k) .. ":\t" .. tostring(v) .. "\n"
     end
@@ -607,21 +609,32 @@ end
 
 ------------------------------------------------------------
 --lib for change control position
---update controls position for nex rendering
-function ControllsPosition:Update(propPos, propAng)
-    if (SelectMode:GetMutiselectMode()) then
-        self:SetCenter(self:GetCenter() + propPos)
-        self:SetAngle(Angle())
-    else
-        self:SetCenter(propPos)
-        self:SetAngle(isLocalMode and propAng or Angle())
-    end
+--update controlls angle
+function ControllsPosition:UpdateAngle(propAngle)
+    local ang = (not SelectMode:GetMutiselectMode() and self:GetLocal()) and propAngle or Angle()
+    self:SetAngle(ang)
+end
 
+--update controlls scale
+function ControllsPosition:UpdateScale()
     local distance = self:GetCenter():Distance(Camera:GetPos()) * 0.1
     local beamScale = distance * 0.1
     self:SetX(Vector(distance, 0, 0))
     self:SetY(Vector(0, distance, 0))
     self:SetZ(Vector(0, 0, distance))
-    self:SetW(Vector(distance, distance, 0))
+    self:SetW(Vector(distance, distance, distance) * 0.5)
     self:SetBeamScale(beamScale)
+end
+
+--update controls position for nex rendering
+function ControllsPosition:Update(propPos, propAng)
+    local center = Vector()
+
+    for prop, _ in pairs(SelectedProps) do
+        center = center + prop:GetPos()
+    end
+
+    self:SetCenter(center / SelectedProps.Count)
+    self:UpdateAngle()
+    self:UpdateScale()
 end
