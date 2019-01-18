@@ -72,7 +72,10 @@ function PANEL:OnMousePressed(keyCode)
 
         if (editorMode == Modes.Move) then
             --TODO: readl radius not 5
-            local isHit, distance = Trace:IsCursorHit(x, y, w, h, targetPosition, 5)
+            local isHit, distance = Trace:IsCursorHit(x, y, ScrW(), ScrH(), targetPosition, 5)
+        elseif (editorMode == Modes.Resize) then
+            local center = ControllsPosition:GetCenter()
+            Trace:IsHitLine(x, y, w, h, center, center + ControllsPosition:GetX())
         end
     end
 end

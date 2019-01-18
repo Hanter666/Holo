@@ -10,6 +10,5 @@ concommand.Add("holo", function()
         HoloEditor:AddProp("models/holograms/sphere.mdl")
     end
 
-    PrintTable(HoloEditor.DeselectedProps)
     HoloEditor:Open()
 end)

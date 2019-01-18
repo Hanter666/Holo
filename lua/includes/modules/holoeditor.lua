@@ -405,7 +405,6 @@ OnPropDeselected = Callback()
 --@return util.AimVector(ang, fov, x, y, w, h)
 function Trace:AimDirection(ang, fov, x, y, w, h)
     ang = ang or Camera:GetAng()
-    endPos = endPos or Camera:GetPos()
     fov = fov or Camera:GetFOV()
     x = x or centerW
     y = y or centerH
@@ -413,17 +412,6 @@ function Trace:AimDirection(ang, fov, x, y, w, h)
     h = h or scrH
 
     return util.AimVector(ang, fov, x, y, w, h)
-end
-
---get trace result
---@return isHit,distance to target from camera
-function Trace:IsLineHit(traceOrigin, traceDirection, targetPosition, targetRadius)
-    local dotNormal = traceDirection:Dot((targetPosition - traceOrigin):GetNormalized())
-    local dot = math.acos(dotNormal)
-    local targetDistance = targetPosition:Distance(traceOrigin)
-    local angle = math.asin(targetRadius / targetDistance)
-
-    return dot < angle, targetDistance
 end
 
 --get trace result for cursor
@@ -437,6 +425,20 @@ function Trace:IsCursorHit(cursorX, cursorY, viewportW, viewportH, targetPositio
     local angle = math.asin(targetRadius / targetDistance)
 
     return dot < angle, targetDistance
+end
+
+--get trace result if hit the line
+function Trace:IsHitLine(cursorX, cursorY, viewportW, viewportH, lineStart, lineEnd)
+    local traceOrigin = Camera:GetPos()
+    local traceDirection = Trace:AimDirection(_, _, cursorX, cursorY, viewportW, viewportH)
+    traceDirection = traceDirection * traceDirection:Distance(lineStart)
+    local distance, nearestPoint, distanceLineStart = util.DistanceToLine(lineStart, lineEnd, traceDirection)
+    debugoverlay.Line(Camera:GetPos(), traceDirection, 5, Color(255, 0, 0), true)
+    debugoverlay.Line(lineStart, lineEnd, 5, Color(0, 255, 255), true)
+    debugoverlay.Box(nearestPoint, Vector(-1, -1, -1), Vector(1, 1, 1), 5, Color(0,255,0))
+    --print(distance)
+    print(nearestPoint)
+    --print(distanceLineStart)
 end
 
 ------------------------------------------------------------

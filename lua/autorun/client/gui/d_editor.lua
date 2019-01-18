@@ -80,7 +80,7 @@ function PANEL:Paint(w, h)
     draw.RoundedBox(0, 0, 29, w, h - 29, Color(41, 45, 62))
 end
 
-function PANEL:OnClose()
+function PANEL:OnRemove()
     Util:RemoveCallbacks()
     HoloEditor:RemoveAllProps()
     Render:GetGridMesh():Destroy()
