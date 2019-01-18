@@ -637,6 +637,6 @@ function ControllsPosition:Update(propPos, propAng)
     end
 
     self:SetCenter(center / SelectedProps.Count)
-    self:UpdateAngle()
+    self:UpdateAngle(propAng)
     self:UpdateScale()
 end
