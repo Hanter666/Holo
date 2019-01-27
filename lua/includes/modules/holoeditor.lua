@@ -435,7 +435,7 @@ function Trace:IsHitLine(cursorX, cursorY, viewportW, viewportH, lineStart, line
     local distance, nearestPoint, distanceLineStart = util.DistanceToLine(lineStart, lineEnd, traceDirection)
     debugoverlay.Line(Camera:GetPos(), traceDirection, 5, Color(255, 0, 0), true)
     debugoverlay.Line(lineStart, lineEnd, 5, Color(0, 255, 255), true)
-    debugoverlay.Box(nearestPoint, Vector(-1, -1, -1), Vector(1, 1, 1), 5, Color(0,255,0))
+    debugoverlay.Box(nearestPoint, Vector(-1, -1, -1), Vector(1, 1, 1), 5, Color(0, 255, 0))
     --print(distance)
     print(nearestPoint)
     --print(distanceLineStart)
