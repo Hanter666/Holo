@@ -1,11 +1,12 @@
 local Props = HoloEditor.Props
 local SelectedProps = HoloEditor.SelectedProps
+local DeselectedProps = HoloEditor.DeselectedProps
 local Camera = HoloEditor.Camera
 local Trace = HoloEditor.Trace
 local Render = HoloEditor.Render
-local SelectMode = HoloEditor.SelectMode
+local Controlls = HoloEditor.Controlls
+local SelectMode = Controlls.SelectMode
 local Modes = SelectMode.Modes
-local ControllsPosition = HoloEditor.ControllsPosition
 local PANEL = {}
 
 function PANEL:Init()
@@ -74,8 +75,8 @@ function PANEL:OnMousePressed(keyCode)
             --TODO: readl radius not 5
             local isHit, distance = Trace:IsCursorHit(x, y, ScrW(), ScrH(), targetPosition, 5)
         elseif (editorMode == Modes.Resize) then
-            local center = ControllsPosition:GetCenter()
-            Trace:IsHitLine(x, y, w, h, center, center + ControllsPosition:GetX())
+            local center = Controlls:GetCenter()
+            Trace:IsHitLine(Camera, x, y, w, h, center, center + Controlls:GetX())
         end
     end
 end
@@ -113,7 +114,7 @@ function PANEL:Paint(w, h)
     local xw, xh = self:LocalToScreen(self:GetWide(), self:GetTall())
     cam.Start3D(Camera:GetPos(), Camera:GetAng(), Camera:GetFOV(), x, y, w, h, 5, 1000)
     render.SetScissorRect(x, y, xw, xh, true)
-    Render:DrawControlls()
+    Render:DrawControlls(Props, SelectedProps, DeselectedProps)
     render.SetScissorRect(0, 0, 0, 0, false)
     cam.End3D()
 
@@ -121,7 +122,7 @@ function PANEL:Paint(w, h)
         Render:DrawCrosshair2D(w, h)
     end
 
-    Render:DrawStats2D()
+    Render:DrawStats2D(Props)
 end
 
 function PANEL:Think()
@@ -139,7 +140,7 @@ function PANEL:Think()
         end
 
         Camera:SetPos(Camera:GetPos() + direction * speed)
-        ControllsPosition:UpdateScale()
+        Controlls:UpdateScale(Camera)
     end
 end
 

@@ -81,7 +81,6 @@ function PANEL:Paint(w, h)
 end
 
 function PANEL:OnRemove()
-    Util:RemoveCallbacks()
     HoloEditor:RemoveAllProps()
     Render:GetGridMesh():Destroy()
 end
