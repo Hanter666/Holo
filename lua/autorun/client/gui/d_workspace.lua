@@ -70,13 +70,17 @@ function PANEL:OnMousePressed(keyCode)
         self.LastClickTime = SysTime()
         local editorMode = SelectMode:GetMode()
         local isMutiselectMode = SelectMode:GetMutiselectMode()
+        local camAng = Camera:GetAng()
+        local camFOV = Camera:GetFOV()
+        local camPos = Camera:GetPos()
+        local traceVector = util.AimVector(camAng, camFOV, x, y, ScrW(), ScrH())
 
         if (editorMode == Modes.Move) then
             --TODO: readl radius not 5
-            local isHit, distance = Trace:IsCursorHit(x, y, ScrW(), ScrH(), targetPosition, 5)
+            local isHit, distance = Trace:IsCursorHit(traceVector, camPos, targetPosition, 5)
         elseif (editorMode == Modes.Resize) then
             local center = Controlls:GetCenter()
-            Trace:IsHitLine(Camera, x, y, w, h, center, center + Controlls:GetX())
+            Trace:IsHitLine(traceVector, center, center + Controlls:GetX())
         end
     end
 end

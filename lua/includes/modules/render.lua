@@ -1,6 +1,5 @@
 --render lib functions for draw stuff
 local Colors = include("colors.lua")
-local Util = include("util.lua")
 local Controlls = include("controlls.lua")
 
 local Render = {
@@ -13,13 +12,6 @@ local Render = {
 
 AccessorFunc(Render, "GridSize", "GridSize", FORCE_NUMBER)
 AccessorFunc(Render, "GridMesh", "GridMesh")
-
-local function AddVertex(mesh, pos, u, v, color)
-    mesh.Position(pos)
-    mesh.TexCoord(0, u, v)
-    mesh.Color(color.r, color.g, color.b, color.a)
-    mesh.AdvanceVertex()
-end
 
 --update grid mesh
 function Render:UpdateGrid(scale)

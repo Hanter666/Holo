@@ -39,7 +39,7 @@ end
 --loads project from the file
 --returns true if successful, otherwise returns false plus error number
 function File:LoadProject(fileName)
-    fileName = fileName or "default" -- FIXME: только для отладки
+    fileName = fileName or "default" --!FIXME: только для отладки
     local fullFileName = addonDirectory .. "/" .. fileName .. ".txt"
     if (not file.Exists(fullFileName, "DATA")) then return false, 0 end
     RemoveAllProps()
